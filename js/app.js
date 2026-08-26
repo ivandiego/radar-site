@@ -1,4 +1,4 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar } from './api.js';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js';
 import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js';
 import { FUNCTIONS_URL } from './config.js';
 
@@ -39,6 +39,33 @@ function renderFila() {
     `<div class="fila-item"><span class="com">${fmtK(f.comissao)}</span>
      <span>${esc(f.pessoa.nome_exibicao)}</span>
      <span class="bola">bola: ${f.bola} · ${f.alvos} alvos</span></div>`).join('');
+}
+
+let ultimoRascunho = null; // {parId, texto}
+
+function renderFilaEnvio(itens) {
+  const cores = { pendente_aprovacao: 'var(--amarelo)', aprovada: 'var(--roxo)', enviada: 'var(--verde)', rejeitada: 'var(--tx2)', falhou: 'var(--verm)' };
+  $('#fila-envio-lista').innerHTML = itens.length ? itens.map((i) =>
+    `<div class="fila-item" data-fid="${i.id}">
+      <span style="color:${cores[i.estado]};font-size:12px;font-weight:700">${i.estado.replace('_', ' ')}</span>
+      <span>${esc(i.destino_rotulo || i.destino)} · ${i.canal}</span>
+      <span class="bola">${esc((i.texto || '').slice(0, 40))}…</span>
+      ${i.estado === 'pendente_aprovacao' ? '<button data-f="aprovar">✔</button><button data-f="rejeitar">✕</button>' : ''}
+      ${i.canal === 'whatsapp' ? '<button data-f="copiar">⧉</button>' : ''}
+    </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">vazia</div>';
+  document.querySelectorAll('#fila-envio-lista button').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('[data-fid]').dataset.fid;
+      const item = itens.find((x) => x.id === id);
+      if (btn.dataset.f === 'copiar') { await navigator.clipboard.writeText(item.texto); toast('Copiado ✔'); return; }
+      try { await fila(btn.dataset.f, { id }); toast('OK ✔'); await carregarFilaEnvio(); }
+      catch (e) { toast(e.message, true); }
+    }));
+}
+
+async function carregarFilaEnvio() {
+  try { renderFilaEnvio((await fila('listar')).itens || []); }
+  catch (e) { $('#fila-envio-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
 }
 
 function renderCards() {
@@ -100,6 +127,7 @@ function contextoDoPar(parId) {
 }
 
 function abrirDialogo(titulo, texto, aplicar = null) {
+  $('#ia-fila').hidden = true;
   const d = $('#ia-dialog');
   $('#ia-titulo').textContent = titulo;
   $('#ia-texto').value = texto;
@@ -128,7 +156,9 @@ async function iaRedigir(parId) {
   toast('Redigindo…');
   try {
     const { texto } = await invocar('redigir', { tipo: tipo.trim(), contexto: contextoDoPar(parId) });
+    ultimoRascunho = { parId, texto };
     abrirDialogo('Rascunho (' + tipo + ') — revise antes de usar', texto);
+    $('#ia-fila').hidden = false;
   } catch (e) { toast(e.message, true); }
 }
 
@@ -197,7 +227,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards();
+    renderAlertas(); renderFila(); renderCards(); carregarFilaEnvio();
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
@@ -227,6 +257,21 @@ $('#recarregar').addEventListener('click', carregar);
 $('#sair').addEventListener('click', async () => { await logout(); location.reload(); });
 $('#resumo-dia').addEventListener('click', resumoDia);
 $('#ia-fechar').addEventListener('click', () => $('#ia-dialog').close());
+$('#ia-fila').addEventListener('click', async () => {
+  if (!ultimoRascunho) return;
+  const c = carteiras.flatMap((x) => x.pares.map((p) => ({ pessoa: x.pessoa, ...p })))
+    .find((x) => x.par.id === ultimoRascunho.parId);
+  const olxId = c && c.imovel && (c.imovel.link_fonte_privado || '').match(/-(\d{9,10})$/) ? c.imovel.link_fonte_privado.match(/-(\d{9,10})$/)[1] : (c && c.imovel && c.imovel.olx_id);
+  const canal = prompt('Canal: olx ou whatsapp', olxId ? 'olx' : 'whatsapp');
+  if (!canal) return;
+  let destino = canal === 'olx' ? (olxId || '') : ((c && (c.pessoa.telefone || c.pessoa.contato_privado)) || '');
+  destino = prompt('Destino (' + (canal === 'olx' ? 'list-id do anúncio' : 'telefone') + '):', destino);
+  if (!destino) return;
+  try {
+    await fila('criar', { canal, destino, destino_rotulo: c ? (c.par.apelido || c.pessoa.nome_exibicao) : '', par_id: ultimoRascunho.parId, texto: $('#ia-texto').value, origem: 'ia' });
+    $('#ia-dialog').close(); toast('Na fila ✔ (pendente de aprovação)'); await carregarFilaEnvio();
+  } catch (e) { toast(e.message, true); }
+});
 $('#ia-copiar').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('#ia-texto').value);
   toast('Copiado ✔');

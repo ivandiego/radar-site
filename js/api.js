@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, PUBLISHABLE_KEY } from './config.js';
+import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
@@ -56,4 +56,18 @@ export async function registrarNoPar(parId, monta) {
   const patch = monta(atual);
   patch.atualizado_via = 'site';
   return lanca(await sb.from('par').update(patch).eq('id', parId).select());
+}
+
+// Fila de envio (mora no projeto irmão; auth = login do Radar)
+export async function fila(acao, payload = {}) {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) throw new Error('sessão expirada');
+  const r = await fetch(`${FUNCTIONS_URL}/fila`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + data.session.access_token },
+    body: JSON.stringify({ acao, ...payload }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.erro) throw new Error(d.erro || 'fila indisponível (' + r.status + ')');
+  return d;
 }
