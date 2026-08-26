@@ -59,10 +59,13 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 #ia-copiar { background: var(--roxo); border: 0; color: #fff; font-weight: 700; }
 
 .rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#tabela-vips { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 900px; }
-#tabela-vips th { text-align: left; color: var(--tx2); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--linha); position: sticky; top: 0; background: var(--bg); }
-#tabela-vips td { padding: 9px 10px; border-bottom: 1px solid var(--linha); white-space: nowrap; }
-#tabela-vips tr:hover td { background: #1a1c26; }
+#tabela-vips { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14.5px; min-width: 980px; background: var(--card); border-radius: 12px; overflow: hidden; }
+#tabela-vips th { text-align: left; color: #cfd2e4; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 12px; border-bottom: 2px solid var(--roxo); position: sticky; top: 0; background: #232636; z-index: 2; }
+#tabela-vips td { padding: 12px; border-bottom: 1px solid var(--linha); white-space: nowrap; }
+#tabela-vips tbody tr:nth-child(even) td { background: #20222e; }
+#tabela-vips tr:hover td { background: #2a2d40; }
+#tabela-vips td:first-child { border-left: 3px solid transparent; }
+#tabela-vips tr:hover td:first-child { border-left-color: var(--roxo); }
 #tabela-vips .num { text-align: right; font-variant-numeric: tabular-nums; }
 #tabela-vips .ok { color: var(--verde); font-weight: 700; }
 #tabela-vips .warn { color: var(--amarelo); font-weight: 700; }

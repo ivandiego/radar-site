@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { parVivo, bolaDe, alvosVivos, alertasDe, comissaoDe, filaDoDia, diasDesde } from '../js/logic.js';
+import { parVivo, alvoVivo, bolaDe, alvosVivos, alertasDe, comissaoDe, filaDoDia, diasDesde } from '../js/logic.js';
 
 const NOW = new Date('2026-08-26T12:00:00Z');
 
@@ -25,11 +25,11 @@ test('bola: vazio → indefinida', () => assert.equal(bolaDe(null), 'indefinida'
 
 test('alvosVivos conta só pares vivos', () => {
   const carteira = { pessoa: { id: 'p' }, pares: [
-    { par: {}, imovel: { status_inventario: 'disponivel' } },
-    { par: { descartado_motivo: 'não' }, imovel: { status_inventario: 'disponivel' } },
-    { par: {}, imovel: { status_inventario: 'morto' } },
+    { par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel' } },
+    { par: { descartado_motivo: 'não', updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel' } },
+    { par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'morto' } },
   ] };
-  assert.equal(alvosVivos(carteira), 1);
+  assert.equal(alvosVivos(carteira, NOW), 1);
 });
 
 test('dono mudo 48h vira alerta; antes de 48h não', () => {
@@ -61,10 +61,10 @@ test('estágio baixo sem telefone NÃO é canal em risco', () => {
 
 test('comissão = 6% do maior alvo vivo', () => {
   const carteira = { pessoa: { valor_do_que_tem: 200000 }, pares: [
-    { par: {}, imovel: { status_inventario: 'disponivel', valor: 400000 } },
-    { par: {}, imovel: { status_inventario: 'disponivel', valor: 300000 } },
+    { par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 400000 } },
+    { par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 300000 } },
   ] };
-  assert.equal(comissaoDe(carteira), 24000);
+  assert.equal(comissaoDe(carteira, NOW), 24000);
 });
 
 test('comissão cai no valor_do_que_tem sem alvos', () => {
@@ -72,10 +72,31 @@ test('comissão cai no valor_do_que_tem sem alvos', () => {
 });
 
 test('fila ordena por comissão desc e só ativos 2-6', () => {
-  const c1 = { pessoa: { id: 'a', nome_exibicao: 'A', estagio: '3-RESPONDEU', gargalo: 'aguardando novo imóvel' }, pares: [{ par: {}, imovel: { status_inventario: 'disponivel', valor: 700000 } }] };
-  const c2 = { pessoa: { id: 'b', nome_exibicao: 'B', estagio: '3-RESPONDEU', gargalo: null }, pares: [{ par: {}, imovel: { status_inventario: 'disponivel', valor: 300000 } }] };
+  const c1 = { pessoa: { id: 'a', nome_exibicao: 'A', estagio: '3-RESPONDEU', gargalo: 'aguardando novo imóvel' }, pares: [{ par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 700000 } }] };
+  const c2 = { pessoa: { id: 'b', nome_exibicao: 'B', estagio: '3-RESPONDEU', gargalo: null }, pares: [{ par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 300000 } }] };
   const c3 = { pessoa: { id: 'c', nome_exibicao: 'C', estagio: '0-MORTO' }, pares: [] };
   const fila = filaDoDia([c2, c3, c1]);
   assert.deepEqual(fila.map(x => x.pessoa.id), ['a', 'b']);
   assert.equal(fila[0].comissao, 42000);
+});
+
+test('alvo parado 96h+ sem resposta NAO conta como vivo', () => {
+  const par={updated_at:'2026-08-20T12:00:00Z', dono_respondeu:false};
+  assert.equal(alvoVivo(par, {status_inventario:'disponivel'}, NOW), false);
+});
+test('alvo mexido ha 2 dias conta como vivo', () => {
+  const par={updated_at:'2026-08-24T12:00:00Z', dono_respondeu:false};
+  assert.equal(alvoVivo(par, {status_inventario:'disponivel'}, NOW), true);
+});
+test('dono respondeu = vivo mesmo antigo', () => {
+  const par={updated_at:'2026-08-01T12:00:00Z', dono_respondeu:true};
+  assert.equal(alvoVivo(par, {status_inventario:'disponivel'}, NOW), true);
+});
+test('contagem usa a regua de 96h', () => {
+  const c={pessoa:{id:'p'}, pares:[
+    {par:{updated_at:'2026-08-25T12:00:00Z'}, imovel:{status_inventario:'disponivel'}},
+    {par:{updated_at:'2026-08-10T12:00:00Z'}, imovel:{status_inventario:'disponivel'}},
+    {par:{updated_at:'2026-08-01T12:00:00Z', dono_respondeu:true}, imovel:{status_inventario:'disponivel'}},
+  ]};
+  assert.equal(alvosVivos(c, NOW), 2);
 });

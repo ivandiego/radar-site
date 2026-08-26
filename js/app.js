@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js';
-import { FUNCTIONS_URL } from './config.js';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787783354';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787783354';
+import { FUNCTIONS_URL } from './config.js?v=1787783354';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -90,11 +90,12 @@ function renderTabela() {
       <td>${bola}</td>
       <td class="num">${fmtK(comissao)}</td>
       <td>${pessoa.telefone || pessoa.contato_privado ? '📱' : '<span class="bad">sem tel</span>'}</td>
+      <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠ ' + esc(pessoa.canal) + '</span>' : esc(pessoa.canal || '—')}</td>
     </tr>`;
   }).join('');
   $('#tabela-vips').innerHTML = `<thead><tr>
     <th>Cliente</th><th>Tipo</th><th>Tem</th><th>Alvos</th><th>Resp.</th><th>Mudos</th>
-    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th>
+    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th><th>Canal</th>
   </tr></thead><tbody>${linhas}</tbody>`;
   document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
     tr.addEventListener('click', () => {
@@ -302,6 +303,9 @@ $('#ia-fila').addEventListener('click', async () => {
   if (!ultimoRascunho) return;
   const c = carteiras.flatMap((x) => x.pares.map((p) => ({ pessoa: x.pessoa, ...p })))
     .find((x) => x.par.id === ultimoRascunho.parId);
+  if (c && /morto|sem[_ ]canal/i.test(c.pessoa.canal || '')) {
+    if (!confirm('⚠️ O canal deste cliente está marcado como "' + c.pessoa.canal + '". Enfileirar mesmo assim?')) return;
+  }
   const olxId = c && c.imovel && (c.imovel.link_fonte_privado || '').match(/-(\d{9,10})$/) ? c.imovel.link_fonte_privado.match(/-(\d{9,10})$/)[1] : (c && c.imovel && c.imovel.olx_id);
   const canal = prompt('Canal: olx ou whatsapp', olxId ? 'olx' : 'whatsapp');
   if (!canal) return;

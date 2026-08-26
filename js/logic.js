@@ -42,12 +42,26 @@ export function paresVivosDe(carteira) {
   return (carteira.pares || []).filter((x) => parVivo(x.par, x.imovel));
 }
 
-export function alvosVivos(carteira) {
-  return paresVivosDe(carteira).length;
+// Alvo VIVO para contagem/regua dos 3: par vivo E (dono respondeu OU mexido <96h).
+// Par parado ha 96h+ sem resposta esta morto pela regua, mesmo sem descarte manual.
+export function alvoVivo(par, imovel, now = new Date()) {
+  if (!parVivo(par, imovel)) return false;
+  if (par.dono_respondeu) return true;
+  const t = par.updated_at ? new Date(par.updated_at).getTime() : NaN;
+  if (Number.isNaN(t)) return false;
+  return (now.getTime() - t) / 36e5 < 96;
 }
 
-export function comissaoDe(carteira) {
-  const vivos = paresVivosDe(carteira);
+export function alvosVivosDe(carteira, now = new Date()) {
+  return (carteira.pares || []).filter((x) => alvoVivo(x.par, x.imovel, now));
+}
+
+export function alvosVivos(carteira, now = new Date()) {
+  return alvosVivosDe(carteira, now).length;
+}
+
+export function comissaoDe(carteira, now = new Date()) {
+  const vivos = alvosVivosDe(carteira, now);
   const valores = vivos.map((x) => (x.imovel && x.imovel.valor) || 0).filter((v) => v > 0);
   const base = valores.length ? Math.max(...valores) : (carteira.pessoa.valor_do_que_tem || 0);
   return Math.round(base * 0.06);
@@ -97,6 +111,7 @@ export function filaDoDia(carteiras) {
       comissao: comissaoDe(c),
       bola: bolaDe(c.pessoa.gargalo),
       alvos: alvosVivos(c),
+      respondidos: alvosVivosDe(c).filter((x) => x.par.dono_respondeu).length,
     }))
     .sort((a, b) => b.comissao - a.comissao);
 }
