@@ -57,3 +57,14 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 .ia-acoes { display: flex; gap: 8px; margin-top: 10px; }
 .ia-acoes button { flex: 1; background: #232636; color: var(--tx); border: 1px solid var(--linha); border-radius: 10px; padding: 10px; min-height: 44px; }
 #ia-copiar { background: var(--roxo); border: 0; color: #fff; font-weight: 700; }
+
+.rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#tabela-vips { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 900px; }
+#tabela-vips th { text-align: left; color: var(--tx2); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--linha); position: sticky; top: 0; background: var(--bg); }
+#tabela-vips td { padding: 9px 10px; border-bottom: 1px solid var(--linha); white-space: nowrap; }
+#tabela-vips tr:hover td { background: #1a1c26; }
+#tabela-vips .num { text-align: right; font-variant-numeric: tabular-nums; }
+#tabela-vips .ok { color: var(--verde); font-weight: 700; }
+#tabela-vips .warn { color: var(--amarelo); font-weight: 700; }
+#tabela-vips .bad { color: var(--verm); font-weight: 700; }
+#tabela-vips .nome-cel { cursor: pointer; font-weight: 700; }

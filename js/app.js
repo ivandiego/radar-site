@@ -68,6 +68,42 @@ async function carregarFilaEnvio() {
   catch (e) { $('#fila-envio-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
 }
 
+function renderTabela() {
+  const linhas = filaDoDia(carteiras).map(({ pessoa, comissao, bola, alvos }) => {
+    const c = carteiras.find((x) => x.pessoa.id === pessoa.id);
+    const vivos = paresVivosDe(c);
+    const resp = vivos.filter((x) => x.par.dono_respondeu).length;
+    const mudos = vivos.length - resp;
+    const dInt = diasDesde(pessoa.ultima_interacao);
+    const dResp = diasDesde(pessoa.ultima_resposta_em);
+    const clsAlvos = alvos === 0 ? 'bad' : alvos >= 3 ? 'ok' : 'warn';
+    const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
+    return `<tr data-pessoa="${pessoa.id}">
+      <td class="nome-cel">${esc(pessoa.nome_exibicao)}</td>
+      <td>${esc((pessoa.classificacao || '?').slice(0, 8))}</td>
+      <td class="num">${pessoa.valor_do_que_tem ? fmtK(pessoa.valor_do_que_tem) : '—'}</td>
+      <td class="num ${clsAlvos}">${alvos}</td>
+      <td class="num ok">${resp}</td>
+      <td class="num ${mudos ? 'warn' : ''}">${mudos}</td>
+      <td class="num ${clsInt}">${dInt === null ? '—' : dInt + 'd'}</td>
+      <td class="num">${dResp === null ? '—' : dResp + 'd'}</td>
+      <td>${bola}</td>
+      <td class="num">${fmtK(comissao)}</td>
+      <td>${pessoa.telefone || pessoa.contato_privado ? '📱' : '<span class="bad">sem tel</span>'}</td>
+    </tr>`;
+  }).join('');
+  $('#tabela-vips').innerHTML = `<thead><tr>
+    <th>Cliente</th><th>Tipo</th><th>Tem</th><th>Alvos</th><th>Resp.</th><th>Mudos</th>
+    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th>
+  </tr></thead><tbody>${linhas}</tbody>`;
+  document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
+    tr.addEventListener('click', () => {
+      $('#tabela').hidden = true; $('#cards').hidden = false;
+      const card = document.getElementById('card-' + tr.dataset.pessoa);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }));
+}
+
 function renderCards() {
   const orden = filaDoDia(carteiras);
   const porId = new Map(carteiras.map((c) => [c.pessoa.id, c]));
@@ -227,7 +263,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards(); carregarFilaEnvio();
+    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio();
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
@@ -256,6 +292,11 @@ $('#form-login').addEventListener('submit', async (ev) => {
 $('#recarregar').addEventListener('click', carregar);
 $('#sair').addEventListener('click', async () => { await logout(); location.reload(); });
 $('#resumo-dia').addEventListener('click', resumoDia);
+$('#ver-tabela').addEventListener('click', () => {
+  const t = $('#tabela');
+  t.hidden = !t.hidden;
+  $('#cards').hidden = !t.hidden;
+});
 $('#ia-fechar').addEventListener('click', () => $('#ia-dialog').close());
 $('#ia-fila').addEventListener('click', async () => {
   if (!ultimoRascunho) return;
