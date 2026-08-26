@@ -1,5 +1,6 @@
-import { sb, sessao, login, logout, fetchCarteira, registrarNoPar } from './api.js';
+import { sessao, login, logout, fetchCarteira, registrarNoPar } from './api.js';
 import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js';
+import { FUNCTIONS_URL } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -109,9 +110,15 @@ function abrirDialogo(titulo, texto, aplicar = null) {
 }
 
 async function invocar(fn, body) {
-  const { data, error } = await sb.functions.invoke(fn, { body });
-  if (error) throw new Error(error.message || 'função indisponível (IA ainda não publicada?)');
-  if (data && data.erro) throw new Error(data.erro);
+  const s = await sessao();
+  if (!s) throw new Error('sessão expirada, entre de novo');
+  const r = await fetch(`${FUNCTIONS_URL}/${fn}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.access_token },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.erro) throw new Error(data.erro || 'IA indisponível (' + r.status + ')');
   return data;
 }
 
