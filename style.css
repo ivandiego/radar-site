@@ -49,3 +49,11 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 
 #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--linha); padding: 10px 16px; border-radius: 10px; z-index: 20; }
 #toast.err { border-color: var(--verm); color: var(--verm); }
+
+#ia-dialog { background: var(--card); color: var(--tx); border: 1px solid var(--linha); border-radius: 14px; padding: 16px; width: min(94vw, 640px); }
+#ia-dialog::backdrop { background: rgba(0,0,0,.6); }
+#ia-dialog h3 { margin-bottom: 10px; font-size: 15px; }
+#ia-texto { width: 100%; background: #171923; color: var(--tx); border: 1px solid var(--linha); border-radius: 10px; padding: 10px; font: 14px/1.5 inherit; }
+.ia-acoes { display: flex; gap: 8px; margin-top: 10px; }
+.ia-acoes button { flex: 1; background: #232636; color: var(--tx); border: 1px solid var(--linha); border-radius: 10px; padding: 10px; min-height: 44px; }
+#ia-copiar { background: var(--roxo); border: 0; color: #fff; font-weight: 700; }

@@ -22,6 +22,7 @@
   <header>
     <h1>Radar</h1>
     <span id="atualizado"></span>
+    <button id="resumo-dia" title="Resumo do dia">🧠</button>
     <button id="recarregar" title="Recarregar">↻</button>
     <button id="sair" title="Sair">⎋</button>
   </header>
@@ -34,6 +35,15 @@
 </main>
 
 <div id="toast" hidden></div>
+<dialog id="ia-dialog">
+  <h3 id="ia-titulo"></h3>
+  <textarea id="ia-texto" rows="12"></textarea>
+  <div class="ia-acoes">
+    <button id="ia-copiar">Copiar</button>
+    <button id="ia-aplicar" hidden>Aplicar no par</button>
+    <button id="ia-fechar">Fechar</button>
+  </div>
+</dialog>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
