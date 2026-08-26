@@ -1,0 +1,51 @@
+* { box-sizing: border-box; margin: 0; }
+:root {
+  --bg: #12131a; --card: #1c1e28; --linha: #2a2d3c; --tx: #e8e8f0; --tx2: #9a9db2;
+  --roxo: #8b5cf6; --verde: #34d399; --amarelo: #fbbf24; --verm: #f87171; --lar: #fb923c;
+}
+body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, 'Segoe UI', Roboto, sans-serif; padding-bottom: 40px; }
+
+#login { max-width: 340px; margin: 18vh auto 0; padding: 0 20px; }
+#login h1 { margin-bottom: 20px; text-align: center; }
+#login input, #login button { width: 100%; padding: 13px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--linha); font-size: 16px; }
+#login input { background: var(--card); color: var(--tx); }
+#login button { background: var(--roxo); color: #fff; border: 0; font-weight: 700; min-height: 48px; }
+.erro { color: var(--verm); font-size: 13px; }
+
+#painel { max-width: 760px; margin: 0 auto; padding: 0 12px; }
+#painel header { display: flex; align-items: center; gap: 10px; padding: 14px 2px; position: sticky; top: 0; background: var(--bg); z-index: 5; }
+#painel header h1 { font-size: 20px; margin-right: auto; }
+#atualizado { color: var(--tx2); font-size: 12px; }
+#painel header button { background: var(--card); color: var(--tx); border: 1px solid var(--linha); border-radius: 8px; min-width: 44px; min-height: 40px; font-size: 16px; }
+
+#alertas { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.alerta { padding: 10px 12px; border-radius: 10px; font-size: 14px; cursor: pointer; border-left: 4px solid; background: var(--card); }
+.alerta.divida { border-color: var(--roxo); }
+.alerta.dono_mudo { border-color: var(--verm); }
+.alerta.cliente_parado { border-color: var(--amarelo); }
+.alerta.canal_risco { border-color: var(--lar); }
+
+#fila { margin-bottom: 18px; }
+#fila h2, #cards h2 { font-size: 15px; color: var(--tx2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.fila-item { display: flex; gap: 10px; align-items: baseline; padding: 8px 4px; border-bottom: 1px solid var(--linha); font-size: 14px; }
+.fila-item .com { color: var(--verde); font-weight: 700; min-width: 70px; }
+.fila-item .bola { margin-left: auto; color: var(--tx2); font-size: 12px; }
+
+.card { background: var(--card); border: 1px solid var(--linha); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.card .topo { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.card .nome { font-weight: 700; font-size: 16px; margin-right: auto; }
+.chip { border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+.chip.alvos-0 { background: #4c1d1d; color: var(--verm); }
+.chip.alvos-1 { background: #4a3a10; color: var(--amarelo); }
+.chip.alvos-3 { background: #113a2b; color: var(--verde); }
+.card .meta { color: var(--tx2); font-size: 13px; margin-bottom: 8px; display: flex; gap: 12px; flex-wrap: wrap; }
+.card .proximo { font-size: 13px; color: var(--tx); background: #171923; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; white-space: pre-wrap; }
+.par { border-top: 1px solid var(--linha); padding: 8px 0 4px; font-size: 14px; }
+.par .ap { display: block; margin-bottom: 4px; }
+.par a { color: var(--roxo); text-decoration: none; font-size: 12px; margin-right: 8px; }
+.par .acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.par .acoes button { background: #232636; color: var(--tx); border: 1px solid var(--linha); border-radius: 8px; padding: 7px 10px; font-size: 12px; min-height: 36px; }
+.par .st { font-size: 11px; color: var(--tx2); margin-left: 6px; }
+
+#toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--linha); padding: 10px 16px; border-radius: 10px; z-index: 20; }
+#toast.err { border-color: var(--verm); color: var(--verm); }

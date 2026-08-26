@@ -1,1 +1,39 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Radar WELICI</title><h1>Radar — em construção</h1>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Radar WELICI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<section id="login" hidden>
+  <h1>Radar de Permutas</h1>
+  <form id="form-login">
+    <input id="email" type="email" placeholder="e-mail" autocomplete="username" required>
+    <input id="senha" type="password" placeholder="senha" autocomplete="current-password" required>
+    <button type="submit">Entrar</button>
+    <p id="login-erro" class="erro" hidden></p>
+  </form>
+</section>
+
+<main id="painel" hidden>
+  <header>
+    <h1>Radar</h1>
+    <span id="atualizado"></span>
+    <button id="recarregar" title="Recarregar">↻</button>
+    <button id="sair" title="Sair">⎋</button>
+  </header>
+  <section id="alertas"></section>
+  <section id="fila">
+    <h2>Fila do dia</h2>
+    <div id="fila-lista"></div>
+  </section>
+  <section id="cards"></section>
+</main>
+
+<div id="toast" hidden></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
