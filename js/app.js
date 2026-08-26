@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787783354';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787783354';
-import { FUNCTIONS_URL } from './config.js?v=1787783354';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787783827';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787783827';
+import { FUNCTIONS_URL } from './config.js?v=1787783827';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -68,8 +68,12 @@ async function carregarFilaEnvio() {
   catch (e) { $('#fila-envio-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
 }
 
+let tabelaSoVips = true;
+
 function renderTabela() {
-  const linhas = filaDoDia(carteiras).map(({ pessoa, comissao, bola, alvos }) => {
+  const base = filaDoDia(carteiras).filter(({ pessoa }) =>
+    !tabelaSoVips || pessoa.classificacao === 'vip' || (pessoa.diferenca_max || 0) > 0);
+  const linhas = base.map(({ pessoa, comissao, bola, alvos }) => {
     const c = carteiras.find((x) => x.pessoa.id === pessoa.id);
     const vivos = paresVivosDe(c);
     const resp = vivos.filter((x) => x.par.dono_respondeu).length;
@@ -78,10 +82,14 @@ function renderTabela() {
     const dResp = diasDesde(pessoa.ultima_resposta_em);
     const clsAlvos = alvos === 0 ? 'bad' : alvos >= 3 ? 'ok' : 'warn';
     const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
+    const linksAlvos = vivos.slice(0, 4).map(({ imovel }, i) => {
+      const h = imovel && /^https:\/\/(www\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
+      return h ? `<a href="${esc(h)}" target="_blank" rel="noopener" title="${esc(imovel.titulo || '')}">${i + 1}↗</a>` : '';
+    }).filter(Boolean).join(' ');
     return `<tr data-pessoa="${pessoa.id}">
       <td class="nome-cel">${esc(pessoa.nome_exibicao)}</td>
-      <td>${esc((pessoa.classificacao || '?').slice(0, 8))}</td>
       <td class="num">${pessoa.valor_do_que_tem ? fmtK(pessoa.valor_do_que_tem) : '—'}</td>
+      <td class="num ok">${pessoa.diferenca_max ? '+' + fmtK(pessoa.diferenca_max) : '—'}</td>
       <td class="num ${clsAlvos}">${alvos}</td>
       <td class="num ok">${resp}</td>
       <td class="num ${mudos ? 'warn' : ''}">${mudos}</td>
@@ -91,12 +99,17 @@ function renderTabela() {
       <td class="num">${fmtK(comissao)}</td>
       <td>${pessoa.telefone || pessoa.contato_privado ? '📱' : '<span class="bad">sem tel</span>'}</td>
       <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠ ' + esc(pessoa.canal) + '</span>' : esc(pessoa.canal || '—')}</td>
+      <td>${linksAlvos || '—'}</td>
     </tr>`;
   }).join('');
   $('#tabela-vips').innerHTML = `<thead><tr>
-    <th>Cliente</th><th>Tipo</th><th>Tem</th><th>Alvos</th><th>Resp.</th><th>Mudos</th>
-    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th><th>Canal</th>
+    <th>Cliente</th><th>Tem</th><th>Adiciona</th><th>Alvos</th><th>Resp.</th><th>Mudos</th>
+    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th><th>Canal</th><th>Anúncios</th>
   </tr></thead><tbody>${linhas}</tbody>`;
+  const h2 = document.querySelector('#tabela h2');
+  h2.innerHTML = `VIPs — visão tabela (${base.length}) <button id="tabela-filtro" style="margin-left:8px;font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--linha);background:#232636;color:var(--tx)">${tabelaSoVips ? 'mostrar todos' : 'só VIPs'}</button>`;
+  document.querySelector('#tabela-filtro').addEventListener('click', () => { tabelaSoVips = !tabelaSoVips; renderTabela(); });
+  document.querySelectorAll('#tabela-vips a').forEach((a) => a.addEventListener('click', (ev) => ev.stopPropagation()));
   document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
     tr.addEventListener('click', () => {
       $('#tabela').hidden = true; $('#cards').hidden = false;
