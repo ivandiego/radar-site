@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787853816';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787853816';
-import { FUNCTIONS_URL } from './config.js?v=1787853816';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787856861';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787856861';
+import { FUNCTIONS_URL } from './config.js?v=1787856861';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -135,6 +135,30 @@ function renderInbox(itens) {
         $('#ia-fila').hidden = false;
       } catch (e) { toast(e.message, true); }
     }));
+}
+
+async function carregarSaude() {
+  const el = document.querySelector('#saude');
+  if (!el) return;
+  try {
+    const s = await fila('saude');
+    const agora = Date.now();
+    const min = (iso) => Math.round((agora - new Date(iso).getTime()) / 60000);
+    const hb = new Map((s.heartbeats || []).map((h) => [h.chave, h]));
+    const pill = (nome, h, limiteMin) => {
+      if (!h) return `<span class="pill ruim">${nome}: <b>nunca rodou</b></span>`;
+      const m = min(h.atualizado_em);
+      const ruim = m > limiteMin;
+      return `<span class="pill ${ruim ? 'ruim' : 'ok'}" title="${esc(h.detalhe || '')}">${nome}: <b>há ${m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60) + 'm' : m + 'min'}</b></span>`;
+    };
+    const travadas = (s.ordens_abertas || []).filter((o) => min(o.criado_em) > 30).length;
+    el.innerHTML =
+      pill('Ciclo', hb.get('ciclo'), 90) +
+      pill('Vigia', hb.get('vigia'), 25) +
+      `<span class="pill ${travadas ? 'ruim' : ''}">Ordens travadas: <b>${travadas}</b></span>` +
+      `<span class="pill ${s.fila_falhou ? 'ruim' : ''}">Envios falhados: <b>${s.fila_falhou}</b></span>` +
+      `<span class="pill">Caixa: <b>${s.inbox_novas} nova${s.inbox_novas === 1 ? '' : 's'}</b></span>`;
+  } catch (e) { el.innerHTML = '<span class="pill ruim">monitor indisponível</span>'; }
 }
 
 async function carregarInbox() {
@@ -430,7 +454,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo();
+    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarSaude();
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
