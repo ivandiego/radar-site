@@ -18,6 +18,10 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 #atualizado { color: var(--tx2); font-size: 12px; }
 #painel header button { background: var(--card); color: var(--tx); border: 1px solid var(--linha); border-radius: 8px; min-width: 44px; min-height: 40px; font-size: 16px; }
 
+#abas { display: flex; gap: 8px; margin-bottom: 14px; }
+#abas button { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid var(--linha); background: var(--card); color: var(--tx2); font-size: 15px; font-weight: 700; }
+#abas button.ativa { background: var(--roxo); border-color: var(--roxo); color: #fff; }
+
 #saude { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12.5px; }
 #saude .pill { background: var(--card); border: 1px solid var(--linha); border-radius: 999px; padding: 5px 12px; color: var(--tx2); }
 #saude .pill b { color: var(--tx); }

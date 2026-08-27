@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787856861';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787856861';
-import { FUNCTIONS_URL } from './config.js?v=1787856861';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787857872';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787857872';
+import { FUNCTIONS_URL } from './config.js?v=1787857872';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -28,6 +28,7 @@ function renderAlertas() {
     '<div class="alerta" style="border-color:var(--verde)">Nenhuma régua vencida 🎉</div>';
   document.querySelectorAll('.alerta[data-pessoa]').forEach((el) =>
     el.addEventListener('click', () => {
+      vendoTabela = false; mostrarAba('clientes');
       const card = document.getElementById('card-' + el.dataset.pessoa);
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }));
@@ -248,7 +249,7 @@ function renderTabela() {
   }));
   document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
     tr.addEventListener('click', () => {
-      $('#tabela').hidden = true; $('#cards').hidden = false;
+      vendoTabela = false; mostrarAba('clientes');
       const card = document.getElementById('card-' + tr.dataset.pessoa);
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }));
@@ -455,6 +456,7 @@ async function carregar() {
   try {
     carteiras = await fetchCarteira();
     renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarSaude();
+    mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
@@ -555,11 +557,27 @@ $('#novo-form').addEventListener('submit', async (ev) => {
     await carregar();
   } catch (e) { toast('Erro: ' + (e.message || e), true); }
 });
+// ---- Abas: Hoje (ação) x Clientes (carteira) ----
+let abaAtual = 'hoje';
+let vendoTabela = true; // dentro de Clientes: tabela (padrão) ou cards
+function mostrarAba(nome) {
+  abaAtual = nome;
+  const hoje = nome === 'hoje';
+  for (const sel of ['#saude', '#alertas', '#inbox', '#fila-envio', '#garimpo']) {
+    const el = document.querySelector(sel); if (el) el.hidden = !hoje;
+  }
+  const fl = $('#fila'); if (fl) fl.hidden = hoje;
+  $('#tabela').hidden = hoje || !vendoTabela;
+  $('#cards').hidden = hoje || vendoTabela;
+  document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
+}
+document.querySelectorAll('#abas button').forEach((b) =>
+  b.addEventListener('click', () => mostrarAba(b.dataset.aba)));
 $('#ver-tabela').addEventListener('click', () => {
-  const t = $('#tabela');
-  t.hidden = !t.hidden;
-  $('#cards').hidden = !t.hidden;
+  vendoTabela = !(abaAtual === 'clientes' && vendoTabela);
+  mostrarAba('clientes');
 });
+mostrarAba('hoje');
 $('#ia-fechar').addEventListener('click', () => { inboxRespondendo = null; $('#ia-dialog').close(); });
 $('#ia-fila').addEventListener('click', async () => {
   // resposta vinda da Caixa de entrada: destino já conhecido, sem prompts
