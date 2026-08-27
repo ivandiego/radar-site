@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787852564';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787852564';
-import { FUNCTIONS_URL } from './config.js?v=1787852564';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787852931';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787852931';
+import { FUNCTIONS_URL } from './config.js?v=1787852931';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -254,8 +254,10 @@ function renderCards() {
           <button data-acao="ia-classificar">🧠 Classificar</button>
         </div></div>`;
     }).join('');
+    const ehVip = (pessoa.diferenca_max || 0) > 0;
     return `<div class="card" id="card-${pessoa.id}">
       <div class="topo"><span class="nome">${esc(pessoa.nome_exibicao)}</span>
+        ${ehVip ? `<button class="garimpar-btn" data-g="${pessoa.id}" title="Ordenar garimpo de novos alvos">🎯 Garimpar</button>` : ''}
         ${chipAlvos(alvosVivos(c), metaAlvosDe(pessoa))}</div>
       <div class="meta">
         <span>${esc(pessoa.classificacao || '')} · ${esc(pessoa.estagio || '')}</span>
@@ -270,6 +272,35 @@ function renderCards() {
 
   document.querySelectorAll('.par button').forEach((btn) =>
     btn.addEventListener('click', () => acaoNoPar(btn.closest('.par').dataset.par, btn.dataset.acao)));
+  document.querySelectorAll('.garimpar-btn').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const c = carteiras.find((x) => x.pessoa.id === btn.dataset.g);
+      if (!c) return;
+      const p = c.pessoa;
+      try {
+        const r = await fila('garimpo_criar', {
+          pessoa_id: p.id, pessoa_nome: p.nome_exibicao, meta: metaAlvosDe(p),
+          criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
+        });
+        toast(r.duplicada ? 'Já existe ordem aberta pra este VIP' : 'Ordem de garimpo criada ✔ — o robô executa na próxima rodada');
+        await carregarGarimpo();
+      } catch (e) { toast(e.message, true); }
+    }));
+}
+
+async function carregarGarimpo() {
+  try {
+    const { itens } = await fila('garimpo_listar');
+    const abertas = (itens || []).filter((i) => ['pendente', 'executando'].includes(i.estado));
+    const ult = (itens || []).filter((i) => i.estado === 'concluida').slice(0, 2);
+    const el = document.querySelector('#garimpo-lista');
+    if (!el) return;
+    el.innerHTML = [...abertas, ...ult].map((i) =>
+      `<div class="fila-item"><span style="color:${i.estado === 'concluida' ? 'var(--verde)' : 'var(--amarelo)'};font-size:12px;font-weight:700">${i.estado}</span>
+       <span>🎯 ${esc(i.pessoa_nome)} (meta ${i.meta})</span>
+       <span class="bola">${esc((i.resultado || '').slice(0, 60))}</span></div>`).join('') ||
+      '<div class="fila-item" style="color:var(--tx2)">nenhuma ordem</div>';
+  } catch (e) { /* seção opcional */ }
 }
 
 // ---- IA (Edge Functions) ----
@@ -390,7 +421,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox();
+    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo();
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
