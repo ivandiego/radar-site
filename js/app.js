@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787835137';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787835137';
-import { FUNCTIONS_URL } from './config.js?v=1787835137';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787835842';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787835842';
+import { FUNCTIONS_URL } from './config.js?v=1787835842';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -51,15 +51,28 @@ function renderFilaEnvio(itens) {
       <span>${esc(i.destino_rotulo || i.destino)} · ${i.canal}</span>
       <span class="bola">${esc((i.texto || '').slice(0, 40))}…</span>
       ${i.estado === 'pendente_aprovacao' ? '<button data-f="aprovar">✔</button><button data-f="rejeitar">✕</button>' : ''}
-      ${i.canal === 'whatsapp' ? '<button data-f="copiar">⧉</button>' : ''}
+      ${i.canal === 'whatsapp' ? '<button data-f="abrir" title="Abrir no WhatsApp com a mensagem digitada">📲</button><button data-f="copiar" title="Copiar texto">⧉</button>' : ''}
+      ${i.canal === 'whatsapp' && ['pendente_aprovacao', 'aprovada'].includes(i.estado) ? '<button data-f="enviei" title="Marcar como enviada">✓ enviei</button>' : ''}
     </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">vazia</div>';
   document.querySelectorAll('#fila-envio-lista button').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const id = btn.closest('[data-fid]').dataset.fid;
       const item = itens.find((x) => x.id === id);
       if (btn.dataset.f === 'copiar') { await navigator.clipboard.writeText(item.texto); toast('Copiado ✔'); return; }
-      try { await fila(btn.dataset.f, { id }); toast('OK ✔'); await carregarFilaEnvio(); }
-      catch (e) { toast(e.message, true); }
+      if (btn.dataset.f === 'abrir') {
+        const num = String(item.destino).replace(/\D/g, '');
+        window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(item.texto), '_blank');
+        return;
+      }
+      try {
+        if (btn.dataset.f === 'enviei') {
+          if (item.estado === 'pendente_aprovacao') await fila('aprovar', { id });
+          await fila('marcar', { id, estado: 'enviada', prova_envio: 'enviado manualmente pelo Ivan via wa.me' });
+        } else {
+          await fila(btn.dataset.f, { id });
+        }
+        toast('OK ✔'); await carregarFilaEnvio();
+      } catch (e) { toast(e.message, true); }
     }));
 }
 
