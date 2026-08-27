@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787857872';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787857872';
-import { FUNCTIONS_URL } from './config.js?v=1787857872';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787858772';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787858772';
+import { FUNCTIONS_URL } from './config.js?v=1787858772';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -21,28 +21,35 @@ function chipAlvos(n, meta = 3) {
 }
 
 function renderAlertas() {
+  // Só alerta o que exige ação: VIPs de verdade (adiciona dinheiro), máx 5.
+  const vipIds = new Set(carteiras.filter((c) => (c.pessoa.diferenca_max || 0) > 0).map((c) => c.pessoa.id));
   const pessoas = carteiras.map((c) => c.pessoa);
-  const alertas = alertasDe(pessoas, carteiras, new Date());
+  const alertas = alertasDe(pessoas, carteiras, new Date())
+    .filter((a) => vipIds.has(a.pessoaId))
+    .filter((a) => ['divida', 'dono_mudo', 'canal_risco'].includes(a.tipo))
+    .slice(0, 5);
   $('#alertas').innerHTML = alertas.map((a) =>
     `<div class="alerta ${a.tipo}" data-pessoa="${a.pessoaId}">${esc(a.msg)}</div>`).join('') ||
-    '<div class="alerta" style="border-color:var(--verde)">Nenhuma régua vencida 🎉</div>';
+    '<div class="alerta" style="border-color:var(--verde)">Nenhuma régua vencida nos VIPs</div>';
   document.querySelectorAll('.alerta[data-pessoa]').forEach((el) =>
     el.addEventListener('click', () => {
-      vendoTabela = false; mostrarAba('clientes');
-      const card = document.getElementById('card-' + el.dataset.pessoa);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      gavetaAberta = el.dataset.pessoa;
+      mostrarAba('vips');
+      renderTabela();
+      const tr = document.querySelector(`tr[data-pessoa="${el.dataset.pessoa}"]`);
+      if (tr) tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }));
 }
 
-function renderFila() {
-  const fila = filaDoDia(carteiras);
-  $('#fila-lista').innerHTML = fila.slice(0, 12).map((f) =>
-    `<div class="fila-item"><span class="com">${fmtK(f.comissao)}</span>
-     <span>${esc(f.pessoa.nome_exibicao)}</span>
-     <span class="bola">bola: ${f.bola} · ${f.alvos} alvos</span></div>`).join('');
-}
-
 let ultimoRascunho = null; // {parId, texto}
+let pendFila = 0, novasInbox = 0;
+function atualizarBadge() {
+  const b = document.querySelector('#badge-hoje');
+  if (!b) return;
+  const n = pendFila + novasInbox;
+  b.hidden = !n;
+  b.textContent = n;
+}
 
 function renderFilaEnvio(itens) {
   const cores = { pendente_aprovacao: 'var(--amarelo)', aprovada: 'var(--roxo)', enviada: 'var(--verde)', rejeitada: 'var(--tx2)', falhou: 'var(--verm)' };
@@ -55,6 +62,9 @@ function renderFilaEnvio(itens) {
       ${i.canal === 'whatsapp' ? '<button data-f="abrir" title="Abrir no WhatsApp com a mensagem digitada">📲</button><button data-f="copiar" title="Copiar texto">⧉</button>' : ''}
       ${i.canal === 'whatsapp' && ['pendente_aprovacao', 'aprovada'].includes(i.estado) ? '<button data-f="enviei" title="Marcar como enviada">✓ enviei</button>' : ''}
     </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">vazia</div>';
+  pendFila = itens.filter((i) => i.estado === 'pendente_aprovacao').length;
+  document.querySelector('#fila-envio h2').innerHTML = `Fila de envio ${pendFila ? '<b>(' + pendFila + ' pra aprovar)</b>' : ''}`;
+  atualizarBadge();
   document.querySelectorAll('#fila-envio-lista button').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const id = btn.closest('[data-fid]').dataset.fid;
@@ -116,7 +126,9 @@ function renderInbox(itens) {
       </div>` : ''}
     </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">nada novo</div>';
   const h2 = document.querySelector('#inbox h2');
-  h2.textContent = `Caixa de entrada${novas.length ? ' (' + novas.length + ' nova' + (novas.length > 1 ? 's' : '') + ')' : ''}`;
+  h2.innerHTML = `Caixa de entrada ${novas.length ? '<b>(' + novas.length + ' nova' + (novas.length > 1 ? 's' : '') + ')</b>' : ''}`;
+  novasInbox = novas.length;
+  atualizarBadge();
   document.querySelectorAll('#inbox-lista button').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const id = btn.closest('[data-iid]').dataset.iid;
@@ -205,12 +217,10 @@ function renderTabela() {
     const meta = metaAlvosDe(pessoa);
     const clsAlvos = alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn';
     const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
-    const linksAlvos = vivos.slice(0, 4).map(({ imovel }, i) => {
-      const h = imovel && /^https:\/\/(www\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
-      return h ? `<a href="${esc(h)}" target="_blank" rel="noopener" title="${esc(imovel.titulo || '')}">${i + 1}↗</a>` : '';
-    }).filter(Boolean).join(' ');
-    return `<tr data-pessoa="${pessoa.id}">
-      <td class="nome-cel">${esc(pessoa.nome_exibicao)}</td>
+    const problema = pessoa.promessa_pendente || /morto|sem[_ ]canal/i.test(pessoa.proximo_passo || '') && false;
+    const aberta = gavetaAberta === pessoa.id;
+    const linha = `<tr class="vip-row ${aberta ? 'aberta' : ''} ${pessoa.promessa_pendente ? 'problema' : ''}" data-pessoa="${pessoa.id}">
+      <td class="nome-cel">${aberta ? '▾ ' : '▸ '}${esc(pessoa.nome_exibicao)}</td>
       <td class="num">${pessoa.valor_do_que_tem ? fmtK(pessoa.valor_do_que_tem) : '—'}</td>
       <td class="num ok">${pessoa.diferenca_max ? '+' + fmtK(pessoa.diferenca_max) : '—'}</td>
       <td class="num ${clsAlvos}">${alvos}/${meta}</td>
@@ -219,17 +229,17 @@ function renderTabela() {
       <td class="num ${clsInt}">${dInt === null ? '—' : dInt + 'd'}</td>
       <td class="num">${dResp === null ? '—' : dResp + 'd'}</td>
       <td>${bola}</td>
-      <td class="num">${fmtK(comissao)}</td>
+      <td class="com">${fmtK(comissao)}</td>
       <td>${pessoa.telefone || pessoa.contato_privado ? esc(pessoa.telefone || pessoa.contato_privado) : '<span class="bad">sem tel</span>'}</td>
-      <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠ ' + esc(pessoa.canal) + '</span>' : esc(pessoa.canal || '—')}</td>
-      <td>${linksAlvos || '—'}</td>
-      <td><button class="editar-btn" data-e="${pessoa.id}" style="background:#232636;color:var(--tx);border:1px solid var(--linha);border-radius:8px;padding:5px 9px">✎</button></td>
+      <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠</span>' : esc(pessoa.canal || '—')}</td>
     </tr>`;
+    const c2 = carteiras.find((x) => x.pessoa.id === pessoa.id);
+    return linha + (aberta ? `<tr class="gaveta"><td colspan="12">${gavetaHtml(c2)}</td></tr>` : '');
   }).join('');
   const seta = (c) => ordem.col === c ? (ordem.asc ? ' ▲' : ' ▼') : '';
   $('#tabela-vips').innerHTML = `<thead><tr>
     <th data-o="cliente">Cliente${seta('cliente')}</th><th data-o="tem">Tem${seta('tem')}</th><th data-o="adiciona">Adiciona${seta('adiciona')}</th><th data-o="alvos">Alvos${seta('alvos')}</th><th data-o="resp">Resp.${seta('resp')}</th><th>Mudos</th>
-    <th data-o="int">Últ. int.${seta('int')}</th><th>Últ. resp. dele</th><th>Bola</th><th data-o="comissao">Comissão${seta('comissao')}</th><th>Tel</th><th>Canal</th><th>Anúncios</th><th>✎</th>
+    <th data-o="int">Últ. int.${seta('int')}</th><th>Últ. resp. dele</th><th>Bola</th><th data-o="comissao">Comissão${seta('comissao')}</th><th>Tel</th><th>Canal</th>
   </tr></thead><tbody>${linhas}</tbody>`;
   document.querySelectorAll('#tabela-vips th[data-o]').forEach((th) => {
     th.style.cursor = 'pointer';
@@ -239,66 +249,23 @@ function renderTabela() {
       renderTabela();
     });
   });
-  const h2 = document.querySelector('#tabela h2');
-  h2.innerHTML = `VIPs — visão tabela (${base.length}) <button id="tabela-filtro" style="margin-left:8px;font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--linha);background:#232636;color:var(--tx)">${tabelaSoVips ? 'mostrar todos' : 'só VIPs'}</button>`;
-  document.querySelector('#tabela-filtro').addEventListener('click', () => { tabelaSoVips = !tabelaSoVips; renderTabela(); });
   document.querySelectorAll('#tabela-vips a').forEach((a) => a.addEventListener('click', (ev) => ev.stopPropagation()));
-  document.querySelectorAll('#tabela-vips .editar-btn').forEach((b) => b.addEventListener('click', (ev) => {
-    ev.stopPropagation();
-    abrirEdicao(b.dataset.e);
-  }));
-  document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
+  document.querySelectorAll('#tabela-vips tr.vip-row').forEach((tr) =>
     tr.addEventListener('click', () => {
-      vendoTabela = false; mostrarAba('clientes');
-      const card = document.getElementById('card-' + tr.dataset.pessoa);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      gavetaAberta = gavetaAberta === tr.dataset.pessoa ? null : tr.dataset.pessoa;
+      renderTabela();
     }));
-}
-
-function renderCards() {
-  const orden = filaDoDia(carteiras);
-  const porId = new Map(carteiras.map((c) => [c.pessoa.id, c]));
-  $('#cards').innerHTML = '<h2>Clientes ativos</h2>' + orden.map(({ pessoa }) => {
-    const c = porId.get(pessoa.id);
-    const vivos = paresVivosDe(c);
-    const dias = diasDesde(pessoa.ultima_interacao);
-    const paresHtml = vivos.map(({ par, imovel }) => {
-      const href = imovel && /^https:\/\/(www\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
-      const link = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">anúncio ↗</a>` : '';
-      const st = par.dono_respondeu ? '✅ dono respondeu' : '⏳ dono não respondeu';
-      const telAn = imovel && imovel.telefone_anunciante ? ` · 📱 ${esc(imovel.telefone_anunciante)}` : '';
-      return `<div class="par" data-par="${par.id}">
-        <span class="ap">${esc(par.apelido || 'par')}<span class="st">${st} · at. há ${diasDesde(par.updated_at) ?? '?'}d${telAn}</span></span>
-        ${link}
-        <div class="acoes">
-          <button data-acao="respondeu">Respondeu</button>
-          <button data-acao="escolheu">Escolheu</button>
-          <button data-acao="nota">Nota</button>
-          <button data-acao="morto">Morto</button>
-          <button data-acao="ia-redigir">✍️ IA</button>
-          <button data-acao="ia-classificar">🧠 Classificar</button>
-        </div></div>`;
-    }).join('');
-    const ehVip = (pessoa.diferenca_max || 0) > 0;
-    return `<div class="card" id="card-${pessoa.id}">
-      <div class="topo"><span class="nome">${esc(pessoa.nome_exibicao)}</span>
-        ${ehVip ? `<button class="garimpar-btn" data-g="${pessoa.id}" title="Ordenar garimpo de novos alvos">🎯 Garimpar</button>` : ''}
-        ${chipAlvos(alvosVivos(c), metaAlvosDe(pessoa))}</div>
-      <div class="meta">
-        <span>${esc(pessoa.classificacao || '')} · ${esc(pessoa.estagio || '')}</span>
-        <span>bola: <b>${bolaDe(pessoa.gargalo)}</b></span>
-        <span>últ. interação: ${dias === null ? '?' : 'há ' + dias + 'd'}</span>
-        ${pessoa.telefone || pessoa.contato_privado ? '<span>📱 ' + esc(pessoa.telefone || pessoa.contato_privado) + '</span>' : '<span style="color:var(--lar)">sem tel.</span>'}
-      </div>
-      ${pessoa.proximo_passo ? `<div class="proximo">${esc(pessoa.proximo_passo.slice(0, 220))}</div>` : ''}
-      ${paresHtml}
-    </div>`;
-  }).join('');
-
-  document.querySelectorAll('.par button').forEach((btn) =>
-    btn.addEventListener('click', () => acaoNoPar(btn.closest('.par').dataset.par, btn.dataset.acao)));
-  document.querySelectorAll('.garimpar-btn').forEach((btn) =>
-    btn.addEventListener('click', async () => {
+  // botões da gaveta
+  document.querySelectorAll('tr.gaveta button[data-acao]').forEach((b) =>
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      acaoNoPar(b.closest('tr[data-par]').dataset.par, b.dataset.acao);
+    }));
+  document.querySelectorAll('tr.gaveta .editar-btn').forEach((b) =>
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); abrirEdicao(b.dataset.e); }));
+  document.querySelectorAll('tr.gaveta .garimpar-btn').forEach((btn) =>
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
       const c = carteiras.find((x) => x.pessoa.id === btn.dataset.g);
       if (!c) return;
       const p = c.pessoa;
@@ -307,10 +274,47 @@ function renderCards() {
           pessoa_id: p.id, pessoa_nome: p.nome_exibicao, meta: metaAlvosDe(p),
           criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
         });
-        toast(r.duplicada ? 'Já existe ordem aberta pra este VIP' : 'Ordem de garimpo criada ✔ — o robô executa na próxima rodada');
+        toast(r.duplicada ? 'Já existe ordem aberta pra este VIP' : 'Ordem de garimpo criada ✔ — o robô executa');
         await carregarGarimpo();
       } catch (e) { toast(e.message, true); }
     }));
+}
+
+function estadoDoPar(par) {
+  if (par.dono_respondeu) return '<span class="est-ok">✅ respondeu</span>';
+  const d = diasDesde(par.updated_at) ?? 99;
+  if (d >= 2) return `<span class="est-mudo">mudo há ${d}d</span>`;
+  return '<span class="est-espera">⏳ aguardando</span>';
+}
+
+function gavetaHtml(c) {
+  const pares = (c.pares || []).filter((x) => !x.par.descartado_motivo)
+    .sort((a, b) => (b.par.dono_respondeu ? 1 : 0) - (a.par.dono_respondeu ? 1 : 0));
+  const linhas = pares.map(({ par, imovel }) => {
+    const href = imovel && /^https:\/\/(www\.|sp\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
+    const nome = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(par.apelido || 'par')} ↗</a>` : esc(par.apelido || 'par');
+    const data = par.updated_at ? new Date(par.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—';
+    return `<tr data-par="${par.id}">
+      <td>${nome}</td>
+      <td class="num">${imovel && imovel.valor ? fmtK(imovel.valor) : '—'}</td>
+      <td>${estadoDoPar(par)}</td>
+      <td class="num">${data} · ${diasDesde(par.updated_at) ?? '?'}d</td>
+      <td>${imovel && imovel.telefone_anunciante ? esc(imovel.telefone_anunciante) : '—'}</td>
+      <td>
+        <button data-acao="ia-redigir">✍️ Responder</button>
+        <button data-acao="respondeu">Respondeu</button>
+        <button data-acao="nota">Nota</button>
+        <button data-acao="morto">Morto</button>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<div class="gaveta-titulo">Alvos de ${esc(c.pessoa.nome_exibicao)} — ${pares.length} ativos</div>
+    <table class="alvos"><thead><tr><th>Alvo</th><th>Valor</th><th>Estado</th><th>Últ. contato</th><th>Tel anunciante</th><th>Ações</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="6" style="color:var(--tx2)">nenhum alvo ativo</td></tr>'}</tbody></table>
+    <div class="gaveta-acoes">
+      <button class="garimpar-btn" data-g="${c.pessoa.id}">🎯 Garimpar novos alvos</button>
+      <button class="editar-btn" data-e="${c.pessoa.id}">✎ Editar ficha</button>
+    </div>`;
 }
 
 async function carregarGarimpo() {
@@ -455,7 +459,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarSaude();
+    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarSaude();
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
@@ -557,27 +561,21 @@ $('#novo-form').addEventListener('submit', async (ev) => {
     await carregar();
   } catch (e) { toast('Erro: ' + (e.message || e), true); }
 });
-// ---- Abas: Hoje (ação) x Clientes (carteira) ----
-let abaAtual = 'hoje';
-let vendoTabela = true; // dentro de Clientes: tabela (padrão) ou cards
+// ---- Abas: VIPs (tabela-mãe) x Hoje (ação) ----
+let abaAtual = 'vips';
+let gavetaAberta = null; // pessoa.id com a gaveta de alvos aberta
 function mostrarAba(nome) {
   abaAtual = nome;
   const hoje = nome === 'hoje';
-  for (const sel of ['#saude', '#alertas', '#inbox', '#fila-envio', '#garimpo']) {
+  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#garimpo']) {
     const el = document.querySelector(sel); if (el) el.hidden = !hoje;
   }
-  const fl = $('#fila'); if (fl) fl.hidden = hoje;
-  $('#tabela').hidden = hoje || !vendoTabela;
-  $('#cards').hidden = hoje || vendoTabela;
+  $('#tabela').hidden = hoje;
   document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
 }
 document.querySelectorAll('#abas button').forEach((b) =>
   b.addEventListener('click', () => mostrarAba(b.dataset.aba)));
-$('#ver-tabela').addEventListener('click', () => {
-  vendoTabela = !(abaAtual === 'clientes' && vendoTabela);
-  mostrarAba('clientes');
-});
-mostrarAba('hoje');
+mostrarAba('vips');
 $('#ia-fechar').addEventListener('click', () => { inboxRespondendo = null; $('#ia-dialog').close(); });
 $('#ia-fila').addEventListener('click', async () => {
   // resposta vinda da Caixa de entrada: destino já conhecido, sem prompts

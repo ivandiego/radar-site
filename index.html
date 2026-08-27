@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Radar WELICI</title>
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700&family=Saira+Semi+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1787858772">
 </head>
 <body>
 <section id="login" hidden>
@@ -20,39 +23,39 @@
 
 <main id="painel" hidden>
   <header>
-    <h1>Radar</h1>
+    <h1>RADAR<span class="marca">WELICI</span></h1>
     <span id="atualizado"></span>
     <button id="novo-cliente" title="Cadastrar cliente">＋</button>
-    <button id="varrer-agora" title="Varrer OLX e WhatsApp agora (vigia pega em até 15 min)">📡</button>
-    <button id="ver-tabela" title="Tabela / Cards">▦</button>
+    <button id="varrer-agora" title="Varrer OLX e WhatsApp agora">📡</button>
     <button id="resumo-dia" title="Resumo do dia">🧠</button>
     <button id="recarregar" title="Recarregar">↻</button>
     <button id="sair" title="Sair">⎋</button>
   </header>
-  <nav id="abas">
-    <button data-aba="hoje" class="ativa">📥 Hoje</button>
-    <button data-aba="clientes">👥 Clientes</button>
-  </nav>
+
   <section id="saude"></section>
-  <section id="alertas"></section>
-  <section id="fila">
-    <h2>Fila do dia</h2>
-    <div id="fila-lista"></div>
-  </section>
-  <section id="inbox">
+
+  <nav id="abas">
+    <button data-aba="vips" class="ativa">VIPs</button>
+    <button data-aba="hoje">Hoje <span id="badge-hoje" class="badge" hidden></span></button>
+  </nav>
+
+  <!-- Aba VIPs -->
+  <section id="tabela"><div class="rolagem"><table id="tabela-vips"></table></div></section>
+
+  <!-- Aba Hoje -->
+  <section id="alertas" hidden></section>
+  <section id="inbox" hidden>
     <h2>Caixa de entrada</h2>
     <div id="inbox-lista"></div>
   </section>
-  <section id="fila-envio">
+  <section id="fila-envio" hidden>
     <h2>Fila de envio</h2>
     <div id="fila-envio-lista"></div>
   </section>
-  <section id="garimpo">
-    <h2>Ordens de garimpo</h2>
+  <section id="garimpo" hidden>
+    <h2>Ordens</h2>
     <div id="garimpo-lista"></div>
   </section>
-  <section id="tabela" hidden><h2>VIPs — visão tabela</h2><div class="rolagem"><table id="tabela-vips"></table></div></section>
-  <section id="cards"></section>
 </main>
 
 <div id="toast" hidden></div>
@@ -88,6 +91,6 @@
     </div>
   </form>
 </dialog>
-<script type="module" src="js/app.js?v=1787857872"></script>
+<script type="module" src="js/app.js?v=1787858772"></script>
 </body>
 </html>
