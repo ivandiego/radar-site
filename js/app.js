@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787783827';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787783827';
-import { FUNCTIONS_URL } from './config.js?v=1787783827';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787798928';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787798928';
+import { FUNCTIONS_URL } from './config.js?v=1787798928';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -306,6 +306,35 @@ $('#form-login').addEventListener('submit', async (ev) => {
 $('#recarregar').addEventListener('click', carregar);
 $('#sair').addEventListener('click', async () => { await logout(); location.reload(); });
 $('#resumo-dia').addEventListener('click', resumoDia);
+$('#novo-cliente').addEventListener('click', () => $('#novo-dialog').showModal());
+$('#novo-fechar').addEventListener('click', () => $('#novo-dialog').close());
+$('#novo-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const f = new FormData(ev.target);
+  const hoje = hojeBR();
+  try {
+    const { sb } = await import('./api.js');
+    const { data, error } = await sb.from('pessoa').insert([{
+      nome_exibicao: f.get('nome'),
+      classificacao: f.get('classificacao'),
+      o_que_tem_texto: f.get('o_que_tem_texto'),
+      valor_do_que_tem: f.get('valor_do_que_tem') ? +f.get('valor_do_que_tem') : null,
+      o_que_busca: f.get('o_que_busca') || null,
+      diferenca_max: f.get('diferenca_max') ? +f.get('diferenca_max') : null,
+      telefone: f.get('telefone') || null,
+      link_thread_olx_privado: f.get('link') || null,
+      estagio: '3-RESPONDEU',
+      gargalo: 'aguardando novo imóvel',
+      proximo_passo: hoje + ': cadastrado pelo site — qualificar o que faltar e garimpar alvos.',
+      atualizado_via: 'site',
+      ultima_interacao: new Date().toISOString(),
+    }]).select('id');
+    if (error) throw error;
+    $('#novo-dialog').close(); ev.target.reset();
+    toast('Cliente cadastrado ✔');
+    await carregar();
+  } catch (e) { toast('Erro: ' + (e.message || e), true); }
+});
 $('#ver-tabela').addEventListener('click', () => {
   const t = $('#tabela');
   t.hidden = !t.hidden;

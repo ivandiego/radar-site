@@ -22,6 +22,7 @@
   <header>
     <h1>Radar</h1>
     <span id="atualizado"></span>
+    <button id="novo-cliente" title="Cadastrar cliente">＋</button>
     <button id="ver-tabela" title="Tabela / Cards">▦</button>
     <button id="resumo-dia" title="Resumo do dia">🧠</button>
     <button id="recarregar" title="Recarregar">↻</button>
@@ -51,6 +52,28 @@
     <button id="ia-fechar">Fechar</button>
   </div>
 </dialog>
-<script type="module" src="js/app.js?v=1787783827"></script>
+<dialog id="novo-dialog">
+  <h3>Novo cliente</h3>
+  <form id="novo-form">
+    <input name="nome" placeholder="Nome (ex: João — casa Vila X)" required>
+    <select name="classificacao">
+      <option value="indefinido">ainda não sei (indefinido)</option>
+      <option value="vip">VIP — completa diferença</option>
+      <option value="receptor">receptor — quer menor, recebe volta</option>
+      <option value="troca_seca">troca par a par</option>
+    </select>
+    <input name="o_que_tem_texto" placeholder="O que ele tem (tipo, bairro, cidade)" required>
+    <input name="valor_do_que_tem" type="number" placeholder="Valor do imóvel dele (ex: 350000)">
+    <input name="o_que_busca" placeholder="O que ele busca">
+    <input name="diferenca_max" type="number" placeholder="Quanto adiciona (ex: 100000)">
+    <input name="telefone" placeholder="Telefone (se tiver)">
+    <input name="link" placeholder="Link do anúncio dele na OLX (se tiver)">
+    <div class="ia-acoes">
+      <button type="submit" id="novo-salvar">Salvar</button>
+      <button type="button" id="novo-fechar">Fechar</button>
+    </div>
+  </form>
+</dialog>
+<script type="module" src="js/app.js?v=1787798928"></script>
 </body>
 </html>

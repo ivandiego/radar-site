@@ -71,3 +71,9 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 #tabela-vips .warn { color: var(--amarelo); font-weight: 700; }
 #tabela-vips .bad { color: var(--verm); font-weight: 700; }
 #tabela-vips .nome-cel { cursor: pointer; font-weight: 700; }
+
+#novo-dialog { background: var(--card); color: var(--tx); border: 1px solid var(--linha); border-radius: 14px; padding: 16px; width: min(94vw, 480px); }
+#novo-dialog::backdrop { background: rgba(0,0,0,.6); }
+#novo-dialog h3 { margin-bottom: 10px; }
+#novo-form input, #novo-form select { width: 100%; padding: 11px; margin-bottom: 8px; border-radius: 10px; border: 1px solid var(--linha); background: #171923; color: var(--tx); font-size: 15px; }
+#novo-salvar { background: var(--verde); color: #0b1512; font-weight: 700; border: 0; }
