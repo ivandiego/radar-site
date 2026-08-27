@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787858772';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787858772';
-import { FUNCTIONS_URL } from './config.js?v=1787858772';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787859919';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787859919';
+import { FUNCTIONS_URL } from './config.js?v=1787859919';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -26,8 +26,9 @@ function renderAlertas() {
   const pessoas = carteiras.map((c) => c.pessoa);
   const alertas = alertasDe(pessoas, carteiras, new Date())
     .filter((a) => vipIds.has(a.pessoaId))
-    .filter((a) => ['divida', 'dono_mudo', 'canal_risco'].includes(a.tipo))
-    .slice(0, 5);
+    .filter((a) => ['peteca', 'divida', 'dono_mudo', 'canal_risco'].includes(a.tipo))
+    .sort((a, b) => (a.tipo === 'peteca' ? -1 : 0) - (b.tipo === 'peteca' ? -1 : 0))
+    .slice(0, 6);
   $('#alertas').innerHTML = alertas.map((a) =>
     `<div class="alerta ${a.tipo}" data-pessoa="${a.pessoaId}">${esc(a.msg)}</div>`).join('') ||
     '<div class="alerta" style="border-color:var(--verde)">Nenhuma régua vencida nos VIPs</div>';

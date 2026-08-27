@@ -7,6 +7,20 @@ test('metaAlvosDe: lê meta_alvos dos critérios', () => assert.equal(metaAlvosD
 test('metaAlvosDe: aceita "meta alvos = N" no o_que_busca', () => assert.equal(metaAlvosDe({ o_que_busca: 'apto — meta alvos = 5' }), 5));
 test('metaAlvosDe: pessoa vazia → 3', () => assert.equal(metaAlvosDe(null), 3));
 
+test('peteca: dono respondeu e parado 24h+ alerta', () => {
+  const NOW2 = new Date('2026-08-27T12:00:00Z');
+  const pessoa = { id: 'p1', nome_exibicao: 'X', estagio: '5-NEGOCIACAO', ultima_interacao: '2026-08-27T10:00:00Z' };
+  const carteira = { pessoa, pares: [{ par: { dono_respondeu: true, updated_at: '2026-08-25T10:00:00Z', apelido: 'X x alvo' }, imovel: null }] };
+  const al = alertasDe([pessoa], [carteira], NOW2);
+  assert.ok(al.some((a) => a.tipo === 'peteca'));
+});
+test('peteca: respondido mexido hoje NÃO alerta', () => {
+  const NOW2 = new Date('2026-08-27T12:00:00Z');
+  const pessoa = { id: 'p1', nome_exibicao: 'X', estagio: '5-NEGOCIACAO', ultima_interacao: '2026-08-27T10:00:00Z' };
+  const carteira = { pessoa, pares: [{ par: { dono_respondeu: true, updated_at: '2026-08-27T09:00:00Z' }, imovel: null }] };
+  assert.ok(!alertasDe([pessoa], [carteira], NOW2).some((a) => a.tipo === 'peteca'));
+});
+
 const NOW = new Date('2026-08-26T12:00:00Z');
 
 test('diasDesde conta dias inteiros', () => {

@@ -105,6 +105,10 @@ export function alertasDe(pessoas, carteiras, now = new Date()) {
         if (!par.dono_respondeu && h !== null && h >= 48) {
           alertas.push({ tipo: 'dono_mudo', pessoaId: p.id, parId: par.id, msg: `Dono mudo há ${Math.floor(h / 24)}d: ${par.apelido || 'par'}` });
         }
+        // PETECA (Ivan, 27/08): dono RESPONDEU e nós paramos >24h — pior vazamento do funil.
+        if (par.dono_respondeu && h !== null && h >= 24) {
+          alertas.push({ tipo: 'peteca', pessoaId: p.id, parId: par.id, msg: `🏐 PETECA NO CHÃO: ${par.apelido || 'par'} respondeu e está sem nosso retorno há ${Math.floor(h / 24)}d` });
+        }
       }
     }
   }

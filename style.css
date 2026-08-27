@@ -96,6 +96,7 @@ table.alvos button:hover { border-color: var(--ambar); }
 
 #alertas { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .alerta { padding: 10px 12px; border-radius: 10px; font-size: 14px; cursor: pointer; border-left: 3px solid; background: var(--painel); }
+.alerta.peteca { border-color: var(--verm); font-weight: 700; }
 .alerta.divida { border-color: var(--ambar); }
 .alerta.dono_mudo { border-color: var(--verm); }
 .alerta.cliente_parado { border-color: var(--amarelo); }
