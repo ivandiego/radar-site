@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1787799257';
+import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1787800128';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
@@ -34,7 +34,7 @@ export async function fetchCarteira() {
   const pares = parIds.length ? lanca(await sb.from('par').select('*').in('id', parIds)) : [];
   const ladosDosPares = parIds.length ? lanca(await sb.from('par_lado').select('par_id,imovel_id').in('par_id', parIds).not('imovel_id', 'is', null)) : [];
   const imvIds = [...new Set(ladosDosPares.map((l) => l.imovel_id))];
-  const imoveis = imvIds.length ? lanca(await sb.from('imovel').select('id,olx_id,titulo,bairro,cidade,valor,status_inventario,link_fonte_privado').in('id', imvIds)) : [];
+  const imoveis = imvIds.length ? lanca(await sb.from('imovel').select('id,olx_id,titulo,bairro,cidade,valor,status_inventario,link_fonte_privado,telefone_anunciante').in('id', imvIds)) : [];
 
   const imovelPorId = new Map(imoveis.map((i) => [i.id, i]));
   const imovelDoPar = new Map();

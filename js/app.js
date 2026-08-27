@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787799257';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787799257';
-import { FUNCTIONS_URL } from './config.js?v=1787799257';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787800128';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787800128';
+import { FUNCTIONS_URL } from './config.js?v=1787800128';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -120,7 +120,7 @@ function renderTabela() {
       <td class="num">${dResp === null ? '—' : dResp + 'd'}</td>
       <td>${bola}</td>
       <td class="num">${fmtK(comissao)}</td>
-      <td>${pessoa.telefone || pessoa.contato_privado ? '📱' : '<span class="bad">sem tel</span>'}</td>
+      <td>${pessoa.telefone || pessoa.contato_privado ? esc(pessoa.telefone || pessoa.contato_privado) : '<span class="bad">sem tel</span>'}</td>
       <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠ ' + esc(pessoa.canal) + '</span>' : esc(pessoa.canal || '—')}</td>
       <td>${linksAlvos || '—'}</td>
       <td><button class="editar-btn" data-e="${pessoa.id}" style="background:#232636;color:var(--tx);border:1px solid var(--linha);border-radius:8px;padding:5px 9px">✎</button></td>
@@ -166,8 +166,9 @@ function renderCards() {
       const href = imovel && /^https:\/\/(www\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
       const link = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">anúncio ↗</a>` : '';
       const st = par.dono_respondeu ? '✅ dono respondeu' : '⏳ dono não respondeu';
+      const telAn = imovel && imovel.telefone_anunciante ? ` · 📱 ${esc(imovel.telefone_anunciante)}` : '';
       return `<div class="par" data-par="${par.id}">
-        <span class="ap">${esc(par.apelido || 'par')}<span class="st">${st} · at. há ${diasDesde(par.updated_at) ?? '?'}d</span></span>
+        <span class="ap">${esc(par.apelido || 'par')}<span class="st">${st} · at. há ${diasDesde(par.updated_at) ?? '?'}d${telAn}</span></span>
         ${link}
         <div class="acoes">
           <button data-acao="respondeu">Respondeu</button>
@@ -185,7 +186,7 @@ function renderCards() {
         <span>${esc(pessoa.classificacao || '')} · ${esc(pessoa.estagio || '')}</span>
         <span>bola: <b>${bolaDe(pessoa.gargalo)}</b></span>
         <span>últ. interação: ${dias === null ? '?' : 'há ' + dias + 'd'}</span>
-        ${pessoa.telefone || pessoa.contato_privado ? '' : '<span style="color:var(--lar)">sem tel.</span>'}
+        ${pessoa.telefone || pessoa.contato_privado ? '<span>📱 ' + esc(pessoa.telefone || pessoa.contato_privado) + '</span>' : '<span style="color:var(--lar)">sem tel.</span>'}
       </div>
       ${pessoa.proximo_passo ? `<div class="proximo">${esc(pessoa.proximo_passo.slice(0, 220))}</div>` : ''}
       ${paresHtml}
