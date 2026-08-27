@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787834974';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787834974';
-import { FUNCTIONS_URL } from './config.js?v=1787834974';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787835137';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787835137';
+import { FUNCTIONS_URL } from './config.js?v=1787835137';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -83,7 +83,8 @@ function contextoDaInbox(item) {
     }
   }
   return `Mensagem recebida no chat da OLX de ${item.remetente}` +
-    (item.anuncio ? ` (anúncio: ${item.anuncio})` : '') + `: "${item.texto}"`;
+    (item.anuncio ? ` (anúncio: ${item.anuncio})` : '') + `: "${item.texto}"\n` +
+    'ATENÇÃO: não há ficha de cliente ligada a esta conversa. NÃO invente dados de cliente ou imóvel — responda só com o que está na mensagem, e se faltar informação, faça UMA pergunta objetiva.';
 }
 
 function renderInbox(itens) {
