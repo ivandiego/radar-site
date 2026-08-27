@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787800128';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787800128';
-import { FUNCTIONS_URL } from './config.js?v=1787800128';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787834974';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787834974';
+import { FUNCTIONS_URL } from './config.js?v=1787834974';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -66,6 +66,66 @@ function renderFilaEnvio(itens) {
 async function carregarFilaEnvio() {
   try { renderFilaEnvio((await fila('listar')).itens || []); }
   catch (e) { $('#fila-envio-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
+}
+
+// ---- Caixa de entrada ----
+let inboxRespondendo = null; // item da inbox sendo respondido via dialog IA
+
+function contextoDaInbox(item) {
+  // tenta achar o par pelo destino (list-id) ou pelo nome do remetente no apelido
+  for (const c of carteiras) {
+    for (const { par, imovel } of c.pares) {
+      const olxId = imovel && imovel.olx_id;
+      if ((olxId && String(item.destino) === String(olxId)) ||
+          (par.apelido || '').toLowerCase().includes((item.remetente || '§').toLowerCase())) {
+        return contextoDoPar(par.id) + `\n\nMENSAGEM RECEBIDA AGORA de ${item.remetente}: "${item.texto}"`;
+      }
+    }
+  }
+  return `Mensagem recebida no chat da OLX de ${item.remetente}` +
+    (item.anuncio ? ` (anúncio: ${item.anuncio})` : '') + `: "${item.texto}"`;
+}
+
+function renderInbox(itens) {
+  const novas = itens.filter((i) => i.estado === 'nova');
+  const lista = novas.length ? novas : itens.slice(0, 3);
+  $('#inbox-lista').innerHTML = lista.length ? lista.map((i) =>
+    `<div class="inbox-item ${i.estado !== 'nova' ? 'lida' : ''}" data-iid="${i.id}">
+      <span class="de">${esc(i.remetente)}</span>
+      ${i.anuncio ? `<span class="quando">${esc(i.anuncio.slice(0, 50))}</span>` : ''}
+      <span class="quando">${esc(i.hora_olx || '')}${i.estado !== 'nova' ? ' · ' + i.estado : ''}</span>
+      <div class="msg">${esc(i.texto.slice(0, 300))}</div>
+      ${i.estado === 'nova' ? `<div class="acoes">
+        <button class="responder" data-i="responder">✍️ Responder</button>
+        <button data-i="ignorar">Ignorar</button>
+      </div>` : ''}
+    </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">nada novo</div>';
+  const h2 = document.querySelector('#inbox h2');
+  h2.textContent = `Caixa de entrada${novas.length ? ' (' + novas.length + ' nova' + (novas.length > 1 ? 's' : '') + ')' : ''}`;
+  document.querySelectorAll('#inbox-lista button').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('[data-iid]').dataset.iid;
+      const item = itens.find((x) => x.id === id);
+      if (btn.dataset.i === 'ignorar') {
+        try { await fila('inbox_marcar', { id, estado: 'ignorada' }); toast('OK ✔'); await carregarInbox(); }
+        catch (e) { toast(e.message, true); }
+        return;
+      }
+      // responder: IA redige, dialog abre com "+ Fila" sem prompts
+      toast('Redigindo…');
+      try {
+        const { texto } = await invocar('redigir', { tipo: 'resposta', contexto: contextoDaInbox(item) });
+        inboxRespondendo = item;
+        ultimoRascunho = null;
+        abrirDialogo('Resposta pra ' + item.remetente + ' — revise e mande pra fila', texto);
+        $('#ia-fila').hidden = false;
+      } catch (e) { toast(e.message, true); }
+    }));
+}
+
+async function carregarInbox() {
+  try { renderInbox((await fila('inbox_listar')).itens || []); }
+  catch (e) { $('#inbox-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
 }
 
 let tabelaSoVips = true;
@@ -315,7 +375,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio();
+    renderAlertas(); renderFila(); renderCards(); renderTabela(); carregarFilaEnvio(); carregarInbox();
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     toast('Erro ao carregar: ' + (e.message || e), true);
@@ -421,8 +481,24 @@ $('#ver-tabela').addEventListener('click', () => {
   t.hidden = !t.hidden;
   $('#cards').hidden = !t.hidden;
 });
-$('#ia-fechar').addEventListener('click', () => $('#ia-dialog').close());
+$('#ia-fechar').addEventListener('click', () => { inboxRespondendo = null; $('#ia-dialog').close(); });
 $('#ia-fila').addEventListener('click', async () => {
+  // resposta vinda da Caixa de entrada: destino já conhecido, sem prompts
+  if (inboxRespondendo) {
+    const item = inboxRespondendo;
+    try {
+      await fila('criar', {
+        canal: item.canal || 'olx', destino: item.destino,
+        destino_rotulo: item.remetente + (item.anuncio ? ' (' + item.anuncio.slice(0, 40) + ')' : ''),
+        texto: $('#ia-texto').value, origem: 'inbox',
+      });
+      await fila('inbox_marcar', { id: item.id, estado: 'respondida' });
+      inboxRespondendo = null;
+      $('#ia-dialog').close(); toast('Na fila ✔ (pendente de aprovação)');
+      await carregarFilaEnvio(); await carregarInbox();
+    } catch (e) { toast(e.message, true); }
+    return;
+  }
   if (!ultimoRascunho) return;
   const c = carteiras.flatMap((x) => x.pares.map((p) => ({ pessoa: x.pessoa, ...p })))
     .find((x) => x.par.id === ultimoRascunho.parId);

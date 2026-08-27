@@ -26,6 +26,17 @@ body { background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, '
 .alerta.canal_risco { border-color: var(--lar); }
 
 #fila { margin-bottom: 18px; }
+
+#inbox { margin-bottom: 18px; }
+#inbox h2 { font-size: 15px; color: var(--tx2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.inbox-item { background: var(--card); border: 1px solid var(--linha); border-left: 4px solid var(--lar); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+.inbox-item.lida { border-left-color: var(--linha); opacity: .6; }
+.inbox-item .de { font-weight: 700; }
+.inbox-item .quando { color: var(--tx2); font-size: 12px; margin-left: 8px; }
+.inbox-item .msg { margin: 6px 0; white-space: pre-wrap; }
+.inbox-item .acoes { display: flex; gap: 6px; }
+.inbox-item .acoes button { background: #232636; color: var(--tx); border: 1px solid var(--linha); border-radius: 8px; padding: 7px 10px; font-size: 12px; min-height: 36px; }
+.inbox-item .acoes .responder { background: var(--roxo); border: 0; color: #fff; font-weight: 700; }
 #fila h2, #cards h2 { font-size: 15px; color: var(--tx2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
 .fila-item { display: flex; gap: 10px; align-items: baseline; padding: 8px 4px; border-bottom: 1px solid var(--linha); font-size: 14px; }
 .fila-item .com { color: var(--verde); font-weight: 700; min-width: 70px; }
