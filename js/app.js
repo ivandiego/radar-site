@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787798928';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787798928';
-import { FUNCTIONS_URL } from './config.js?v=1787798928';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787799257';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787799257';
+import { FUNCTIONS_URL } from './config.js?v=1787799257';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -69,10 +69,33 @@ async function carregarFilaEnvio() {
 }
 
 let tabelaSoVips = true;
+let ordem = { col: null, asc: false };
+
+function valorColuna(f, col) {
+  const p = f.pessoa;
+  const c = carteiras.find((x) => x.pessoa.id === p.id);
+  switch (col) {
+    case 'cliente': return (p.nome_exibicao || '').toLowerCase();
+    case 'tem': return p.valor_do_que_tem || 0;
+    case 'adiciona': return p.diferenca_max || 0;
+    case 'alvos': return f.alvos;
+    case 'resp': return f.respondidos || 0;
+    case 'int': return diasDesde(p.ultima_interacao) ?? 999;
+    case 'comissao': return f.comissao;
+    default: return 0;
+  }
+}
 
 function renderTabela() {
-  const base = filaDoDia(carteiras).filter(({ pessoa }) =>
-    !tabelaSoVips || pessoa.classificacao === 'vip' || (pessoa.diferenca_max || 0) > 0);
+  // VIP de verdade = sabemos quanto ele ADICIONA (definicao do Ivan, 26/08)
+  let base = filaDoDia(carteiras).filter(({ pessoa }) =>
+    !tabelaSoVips || (pessoa.diferenca_max || 0) > 0);
+  if (ordem.col) {
+    base = [...base].sort((a, b) => {
+      const va = valorColuna(a, ordem.col), vb = valorColuna(b, ordem.col);
+      return (va > vb ? 1 : va < vb ? -1 : 0) * (ordem.asc ? 1 : -1);
+    });
+  }
   const linhas = base.map(({ pessoa, comissao, bola, alvos }) => {
     const c = carteiras.find((x) => x.pessoa.id === pessoa.id);
     const vivos = paresVivosDe(c);
@@ -100,16 +123,30 @@ function renderTabela() {
       <td>${pessoa.telefone || pessoa.contato_privado ? '📱' : '<span class="bad">sem tel</span>'}</td>
       <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠ ' + esc(pessoa.canal) + '</span>' : esc(pessoa.canal || '—')}</td>
       <td>${linksAlvos || '—'}</td>
+      <td><button class="editar-btn" data-e="${pessoa.id}" style="background:#232636;color:var(--tx);border:1px solid var(--linha);border-radius:8px;padding:5px 9px">✎</button></td>
     </tr>`;
   }).join('');
+  const seta = (c) => ordem.col === c ? (ordem.asc ? ' ▲' : ' ▼') : '';
   $('#tabela-vips').innerHTML = `<thead><tr>
-    <th>Cliente</th><th>Tem</th><th>Adiciona</th><th>Alvos</th><th>Resp.</th><th>Mudos</th>
-    <th>Últ. int.</th><th>Últ. resp. dele</th><th>Bola</th><th>Comissão</th><th>Tel</th><th>Canal</th><th>Anúncios</th>
+    <th data-o="cliente">Cliente${seta('cliente')}</th><th data-o="tem">Tem${seta('tem')}</th><th data-o="adiciona">Adiciona${seta('adiciona')}</th><th data-o="alvos">Alvos${seta('alvos')}</th><th data-o="resp">Resp.${seta('resp')}</th><th>Mudos</th>
+    <th data-o="int">Últ. int.${seta('int')}</th><th>Últ. resp. dele</th><th>Bola</th><th data-o="comissao">Comissão${seta('comissao')}</th><th>Tel</th><th>Canal</th><th>Anúncios</th><th>✎</th>
   </tr></thead><tbody>${linhas}</tbody>`;
+  document.querySelectorAll('#tabela-vips th[data-o]').forEach((th) => {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      const c = th.dataset.o;
+      ordem = { col: c, asc: ordem.col === c ? !ordem.asc : false };
+      renderTabela();
+    });
+  });
   const h2 = document.querySelector('#tabela h2');
   h2.innerHTML = `VIPs — visão tabela (${base.length}) <button id="tabela-filtro" style="margin-left:8px;font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--linha);background:#232636;color:var(--tx)">${tabelaSoVips ? 'mostrar todos' : 'só VIPs'}</button>`;
   document.querySelector('#tabela-filtro').addEventListener('click', () => { tabelaSoVips = !tabelaSoVips; renderTabela(); });
   document.querySelectorAll('#tabela-vips a').forEach((a) => a.addEventListener('click', (ev) => ev.stopPropagation()));
+  document.querySelectorAll('#tabela-vips .editar-btn').forEach((b) => b.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    abrirEdicao(b.dataset.e);
+  }));
   document.querySelectorAll('#tabela-vips tr[data-pessoa]').forEach((tr) =>
     tr.addEventListener('click', () => {
       $('#tabela').hidden = true; $('#cards').hidden = false;
@@ -306,7 +343,32 @@ $('#form-login').addEventListener('submit', async (ev) => {
 $('#recarregar').addEventListener('click', carregar);
 $('#sair').addEventListener('click', async () => { await logout(); location.reload(); });
 $('#resumo-dia').addEventListener('click', resumoDia);
-$('#novo-cliente').addEventListener('click', () => $('#novo-dialog').showModal());
+let editandoId = null;
+
+function abrirEdicao(pessoaId) {
+  const c = carteiras.find((x) => x.pessoa.id === pessoaId);
+  if (!c) return;
+  const p = c.pessoa;
+  editandoId = pessoaId;
+  const f = $('#novo-form');
+  f.nome.value = p.nome_exibicao || '';
+  f.classificacao.value = p.classificacao || 'indefinido';
+  f.o_que_tem_texto.value = p.o_que_tem_texto || '';
+  f.valor_do_que_tem.value = p.valor_do_que_tem || '';
+  f.o_que_busca.value = p.o_que_busca || '';
+  f.diferenca_max.value = p.diferenca_max || '';
+  f.telefone.value = p.telefone || '';
+  f.link.value = p.link_thread_olx_privado || '';
+  document.querySelector('#novo-dialog h3').textContent = 'Editar: ' + p.nome_exibicao;
+  $('#novo-dialog').showModal();
+}
+
+$('#novo-cliente').addEventListener('click', () => {
+  editandoId = null;
+  $('#novo-form').reset();
+  document.querySelector('#novo-dialog h3').textContent = 'Novo cliente';
+  $('#novo-dialog').showModal();
+});
 $('#novo-fechar').addEventListener('click', () => $('#novo-dialog').close());
 $('#novo-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
@@ -314,6 +376,24 @@ $('#novo-form').addEventListener('submit', async (ev) => {
   const hoje = hojeBR();
   try {
     const { sb } = await import('./api.js');
+    if (editandoId) {
+      const { error: e2 } = await sb.from('pessoa').update({
+        nome_exibicao: f.get('nome'),
+        classificacao: f.get('classificacao'),
+        o_que_tem_texto: f.get('o_que_tem_texto'),
+        valor_do_que_tem: f.get('valor_do_que_tem') ? +f.get('valor_do_que_tem') : null,
+        o_que_busca: f.get('o_que_busca') || null,
+        diferenca_max: f.get('diferenca_max') ? +f.get('diferenca_max') : null,
+        telefone: f.get('telefone') || null,
+        link_thread_olx_privado: f.get('link') || null,
+        atualizado_via: 'site',
+      }).eq('id', editandoId);
+      if (e2) throw e2;
+      $('#novo-dialog').close(); ev.target.reset(); editandoId = null;
+      toast('Ficha atualizada ✔');
+      await carregar();
+      return;
+    }
     const { data, error } = await sb.from('pessoa').insert([{
       nome_exibicao: f.get('nome'),
       classificacao: f.get('classificacao'),
