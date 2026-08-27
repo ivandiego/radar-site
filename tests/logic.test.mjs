@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { parVivo, alvoVivo, bolaDe, alvosVivos, alertasDe, comissaoDe, filaDoDia, diasDesde } from '../js/logic.js';
+import { parVivo, alvoVivo, bolaDe, alvosVivos, alertasDe, comissaoDe, filaDoDia, diasDesde, metaAlvosDe } from '../js/logic.js';
+
+test('metaAlvosDe: padrão 3 sem tag', () => assert.equal(metaAlvosDe({ criterios: 'apto 3q Santos' }), 3));
+test('metaAlvosDe: lê meta_alvos dos critérios', () => assert.equal(metaAlvosDe({ criterios: 'teto 749. meta_alvos: 10' }), 10));
+test('metaAlvosDe: aceita "meta alvos = N" no o_que_busca', () => assert.equal(metaAlvosDe({ o_que_busca: 'apto — meta alvos = 5' }), 5));
+test('metaAlvosDe: pessoa vazia → 3', () => assert.equal(metaAlvosDe(null), 3));
 
 const NOW = new Date('2026-08-26T12:00:00Z');
 

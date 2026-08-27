@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787835842';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia } from './logic.js?v=1787835842';
-import { FUNCTIONS_URL } from './config.js?v=1787835842';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787852564';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787852564';
+import { FUNCTIONS_URL } from './config.js?v=1787852564';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -15,9 +15,9 @@ function fmtK(v) { return 'R$ ' + Math.round(v / 1000) + 'k'; }
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 function hojeBR() { return new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
 
-function chipAlvos(n) {
-  const cls = n === 0 ? 'alvos-0' : n >= 3 ? 'alvos-3' : 'alvos-1';
-  return `<span class="chip ${cls}">${n} alvo${n === 1 ? '' : 's'}</span>`;
+function chipAlvos(n, meta = 3) {
+  const cls = n === 0 ? 'alvos-0' : n >= meta ? 'alvos-3' : 'alvos-1';
+  return `<span class="chip ${cls}">${n}/${meta} alvo${n === 1 ? '' : 's'}</span>`;
 }
 
 function renderAlertas() {
@@ -177,7 +177,8 @@ function renderTabela() {
     const mudos = vivos.length - resp;
     const dInt = diasDesde(pessoa.ultima_interacao);
     const dResp = diasDesde(pessoa.ultima_resposta_em);
-    const clsAlvos = alvos === 0 ? 'bad' : alvos >= 3 ? 'ok' : 'warn';
+    const meta = metaAlvosDe(pessoa);
+    const clsAlvos = alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn';
     const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
     const linksAlvos = vivos.slice(0, 4).map(({ imovel }, i) => {
       const h = imovel && /^https:\/\/(www\.)?olx\.com\.br\//.test(imovel.link_fonte_privado || '') ? imovel.link_fonte_privado : null;
@@ -187,7 +188,7 @@ function renderTabela() {
       <td class="nome-cel">${esc(pessoa.nome_exibicao)}</td>
       <td class="num">${pessoa.valor_do_que_tem ? fmtK(pessoa.valor_do_que_tem) : '—'}</td>
       <td class="num ok">${pessoa.diferenca_max ? '+' + fmtK(pessoa.diferenca_max) : '—'}</td>
-      <td class="num ${clsAlvos}">${alvos}</td>
+      <td class="num ${clsAlvos}">${alvos}/${meta}</td>
       <td class="num ok">${resp}</td>
       <td class="num ${mudos ? 'warn' : ''}">${mudos}</td>
       <td class="num ${clsInt}">${dInt === null ? '—' : dInt + 'd'}</td>
@@ -255,7 +256,7 @@ function renderCards() {
     }).join('');
     return `<div class="card" id="card-${pessoa.id}">
       <div class="topo"><span class="nome">${esc(pessoa.nome_exibicao)}</span>
-        ${chipAlvos(alvosVivos(c))}</div>
+        ${chipAlvos(alvosVivos(c), metaAlvosDe(pessoa))}</div>
       <div class="meta">
         <span>${esc(pessoa.classificacao || '')} · ${esc(pessoa.estagio || '')}</span>
         <span>bola: <b>${bolaDe(pessoa.gargalo)}</b></span>

@@ -60,6 +60,14 @@ export function alvosVivos(carteira, now = new Date()) {
   return alvosVivosDe(carteira, now).length;
 }
 
+// Régua de alvos por VIP: padrão 3, configurável na ficha com a tag
+// "meta_alvos: N" (em criterios ou o_que_busca). Decisão do Ivan, 27/08.
+export function metaAlvosDe(pessoa) {
+  const txt = `${(pessoa && pessoa.criterios) || ''} ${(pessoa && pessoa.o_que_busca) || ''}`;
+  const m = txt.match(/meta[_ ]alvos\s*[:=]\s*(\d{1,2})/i);
+  return m ? Math.max(1, parseInt(m[1], 10)) : 3;
+}
+
 export function comissaoDe(carteira, now = new Date()) {
   const vivos = alvosVivosDe(carteira, now);
   const valores = vivos.map((x) => (x.imovel && x.imovel.valor) || 0).filter((v) => v > 0);
