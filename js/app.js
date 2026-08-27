@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787852931';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787852931';
-import { FUNCTIONS_URL } from './config.js?v=1787852931';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787853816';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787853816';
+import { FUNCTIONS_URL } from './config.js?v=1787853816';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -290,18 +290,27 @@ function renderCards() {
 
 async function carregarGarimpo() {
   try {
-    const { itens } = await fila('garimpo_listar');
-    const abertas = (itens || []).filter((i) => ['pendente', 'executando'].includes(i.estado));
-    const ult = (itens || []).filter((i) => i.estado === 'concluida').slice(0, 2);
+    const [g, v] = await Promise.all([fila('garimpo_listar'), fila('varredura_listar')]);
+    const linha = (icone, nome, i) =>
+      `<div class="fila-item"><span style="color:${i.estado === 'concluida' ? 'var(--verde)' : 'var(--amarelo)'};font-size:12px;font-weight:700">${i.estado}</span>
+       <span>${icone} ${esc(nome)}</span>
+       <span class="bola">${esc((i.resultado || '').slice(0, 60))}</span></div>`;
+    const gi = (g.itens || []).filter((i) => ['pendente', 'executando'].includes(i.estado) || i.estado === 'concluida')
+      .slice(0, 4).map((i) => linha('🎯', `${i.pessoa_nome} (meta ${i.meta})`, i));
+    const vi = (v.itens || []).slice(0, 2).map((i) => linha('📡', 'Varredura OLX + WhatsApp', i));
     const el = document.querySelector('#garimpo-lista');
     if (!el) return;
-    el.innerHTML = [...abertas, ...ult].map((i) =>
-      `<div class="fila-item"><span style="color:${i.estado === 'concluida' ? 'var(--verde)' : 'var(--amarelo)'};font-size:12px;font-weight:700">${i.estado}</span>
-       <span>🎯 ${esc(i.pessoa_nome)} (meta ${i.meta})</span>
-       <span class="bola">${esc((i.resultado || '').slice(0, 60))}</span></div>`).join('') ||
-      '<div class="fila-item" style="color:var(--tx2)">nenhuma ordem</div>';
+    el.innerHTML = [...vi, ...gi].join('') || '<div class="fila-item" style="color:var(--tx2)">nenhuma ordem</div>';
   } catch (e) { /* seção opcional */ }
 }
+
+document.querySelector('#varrer-agora').addEventListener('click', async () => {
+  try {
+    const r = await fila('varredura_criar');
+    toast(r.duplicada ? 'Já tem varredura na fila' : 'Varredura pedida ✔ — o vigia pega em até 15 min');
+    await carregarGarimpo();
+  } catch (e) { toast(e.message, true); }
+});
 
 // ---- IA (Edge Functions) ----
 function contextoDoPar(parId) {
