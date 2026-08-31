@@ -91,8 +91,9 @@ test('comissão cai no valor_do_que_tem sem alvos', () => {
 });
 
 test('fila ordena por comissão desc e só ativos 2-6', () => {
-  const c1 = { pessoa: { id: 'a', nome_exibicao: 'A', estagio: '3-RESPONDEU', gargalo: 'aguardando novo imóvel' }, pares: [{ par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 700000 } }] };
-  const c2 = { pessoa: { id: 'b', nome_exibicao: 'B', estagio: '3-RESPONDEU', gargalo: null }, pares: [{ par: { updated_at: '2026-08-26T10:00:00Z' }, imovel: { status_inventario: 'disponivel', valor: 300000 } }] };
+  const recente = new Date(Date.now() - 3600e3).toISOString(); // 1h atrás — imune ao calendário
+  const c1 = { pessoa: { id: 'a', nome_exibicao: 'A', estagio: '3-RESPONDEU', gargalo: 'aguardando novo imóvel' }, pares: [{ par: { updated_at: recente }, imovel: { status_inventario: 'disponivel', valor: 700000 } }] };
+  const c2 = { pessoa: { id: 'b', nome_exibicao: 'B', estagio: '3-RESPONDEU', gargalo: null }, pares: [{ par: { updated_at: recente }, imovel: { status_inventario: 'disponivel', valor: 300000 } }] };
   const c3 = { pessoa: { id: 'c', nome_exibicao: 'C', estagio: '0-MORTO' }, pares: [] };
   const fila = filaDoDia([c2, c3, c1]);
   assert.deepEqual(fila.map(x => x.pessoa.id), ['a', 'b']);

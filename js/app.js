@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1787859919';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1787859919';
-import { FUNCTIONS_URL } from './config.js?v=1787859919';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788175768';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788175768';
+import { FUNCTIONS_URL } from './config.js?v=1788175768';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -53,15 +53,16 @@ function atualizarBadge() {
 }
 
 function renderFilaEnvio(itens) {
-  const cores = { pendente_aprovacao: 'var(--amarelo)', aprovada: 'var(--roxo)', enviada: 'var(--verde)', rejeitada: 'var(--tx2)', falhou: 'var(--verm)' };
+  const cores = { pendente_aprovacao: 'var(--amarelo)', aprovada: 'var(--roxo)', digitada: 'var(--ambar)', enviada: 'var(--verde)', rejeitada: 'var(--tx2)', falhou: 'var(--verm)' };
+  const rotulos = { digitada: '✏️ no Whats — só apertar ENVIAR lá' };
   $('#fila-envio-lista').innerHTML = itens.length ? itens.map((i) =>
     `<div class="fila-item" data-fid="${i.id}">
-      <span style="color:${cores[i.estado]};font-size:12px;font-weight:700">${i.estado.replace('_', ' ')}</span>
+      <span style="color:${cores[i.estado]};font-size:12px;font-weight:700">${rotulos[i.estado] || i.estado.replace('_', ' ')}</span>
       <span>${esc(i.destino_rotulo || i.destino)} · ${i.canal}</span>
       <span class="bola">${esc((i.texto || '').slice(0, 40))}…</span>
       ${i.estado === 'pendente_aprovacao' ? '<button data-f="aprovar">✔</button><button data-f="rejeitar">✕</button>' : ''}
       ${i.canal === 'whatsapp' ? '<button data-f="abrir" title="Abrir no WhatsApp com a mensagem digitada">📲</button><button data-f="copiar" title="Copiar texto">⧉</button>' : ''}
-      ${i.canal === 'whatsapp' && ['pendente_aprovacao', 'aprovada'].includes(i.estado) ? '<button data-f="enviei" title="Marcar como enviada">✓ enviei</button>' : ''}
+      ${i.canal === 'whatsapp' && ['pendente_aprovacao', 'aprovada', 'digitada'].includes(i.estado) ? '<button data-f="enviei" title="Marcar como enviada">✓ enviei</button>' : ''}
     </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">vazia</div>';
   pendFila = itens.filter((i) => i.estado === 'pendente_aprovacao').length;
   document.querySelector('#fila-envio h2').innerHTML = `Fila de envio ${pendFila ? '<b>(' + pendFila + ' pra aprovar)</b>' : ''}`;
