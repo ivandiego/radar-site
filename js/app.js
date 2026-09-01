@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788289821';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788289821';
-import { FUNCTIONS_URL } from './config.js?v=1788289821';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788290088';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788290088';
+import { FUNCTIONS_URL } from './config.js?v=1788290088';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -222,7 +222,7 @@ function renderTabela() {
     const problema = pessoa.promessa_pendente || /morto|sem[_ ]canal/i.test(pessoa.proximo_passo || '') && false;
     const aberta = gavetaAberta === pessoa.id;
     const linha = `<tr class="vip-row ${aberta ? 'aberta' : ''} ${pessoa.promessa_pendente ? 'problema' : ''}" data-pessoa="${pessoa.id}">
-      <td class="nome-cel">${aberta ? '▾ ' : '▸ '}${esc(pessoa.nome_exibicao)}</td>
+      <td class="nome-cel">${aberta ? '▾ ' : '▸ '}${esc(pessoa.nome_exibicao)}${/^https:\/\/(www\.|sp\.)?olx\.com\.br\//.test(pessoa.link_thread_olx_privado || '') ? ` <a href="${esc(pessoa.link_thread_olx_privado)}" target="_blank" rel="noopener" title="Anúncio do cliente na OLX">↗</a>` : ''}</td>
       <td class="num">${pessoa.valor_do_que_tem ? fmtK(pessoa.valor_do_que_tem) : '—'}</td>
       <td class="num ok">${pessoa.diferenca_max ? '+' + fmtK(pessoa.diferenca_max) : '—'}</td>
       <td class="num ${clsAlvos}">${alvos}/${meta}</td>
@@ -297,14 +297,15 @@ const ETAPA_ROTULO = { contactado: 'contato', valor: 'valor', fotos: 'fotos', ac
 function chipsPontas(parId) {
   const ck = checklistCache[parId];
   if (!ck || ck === 'loading') return '<span class="pontas" style="color:var(--tx2)">…</span>';
-  const linha = (lado, rot) => {
+  const linha = (lado) => {
     const feitos = ck[lado] || new Set();
     const marcas = ETAPAS.map((e) =>
       `<i class="${feitos.has(e) ? 'ck' : 'nk'}" title="${ETAPA_ROTULO[e]}${feitos.has(e) ? ' ✓' : ' pendente'}">${feitos.has(e) ? '●' : '○'}</i>`).join('');
-    const falta = ETAPAS.filter((e) => !feitos.has(e)).map((e) => ETAPA_ROTULO[e]).join(', ');
-    return `<div class="ponta" title="${rot}: falta ${falta || 'nada'}"><b>${rot}</b> ${marcas}</div>`;
+    const pendentes = ETAPAS.filter((e) => !feitos.has(e)).map((e) => ETAPA_ROTULO[e]);
+    const falta = pendentes.length ? `<span class="falta">falta ${pendentes[0]}${pendentes.length > 1 ? ` +${pendentes.length - 1}` : ''}</span>` : '<span class="falta ok">completo ✓</span>';
+    return `<div class="ponta" title="${lado}: pendente ${pendentes.join(', ') || 'nada'}"><b>${lado}</b> ${marcas} ${falta}</div>`;
   };
-  return `<span class="pontas">${linha('cliente', 'cli')}${linha('dono', 'dono')}</span>`;
+  return `<span class="pontas">${linha('cliente')}${linha('dono')}</span>`;
 }
 
 async function carregarChecklist(parIds) {

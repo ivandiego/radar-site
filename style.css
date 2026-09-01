@@ -146,3 +146,6 @@ table.alvos button:hover { border-color: var(--ambar); }
 .ponta i { font-style: normal; letter-spacing: 2px; }
 .ponta i.ck { color: var(--verde); }
 .ponta i.nk { color: var(--tx2); opacity: .45; }
+.ponta b { width: 46px; }
+.ponta .falta { color: var(--ambar); font-weight: 600; margin-left: 4px; }
+.ponta .falta.ok { color: var(--verde); }
