@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788272466';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788272466';
-import { FUNCTIONS_URL } from './config.js?v=1788272466';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788289821';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788289821';
+import { FUNCTIONS_URL } from './config.js?v=1788289821';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -289,6 +289,36 @@ function estadoDoPar(par) {
   return '<span class="est-espera">⏳ aguardando</span>';
 }
 
+// ---- Checklist de pontas (par_checklist via edge fn) ----
+let checklistCache = {}; // parId -> {cliente:Set(etapas), dono:Set(etapas)} | 'loading'
+const ETAPAS = ['contactado', 'valor', 'fotos', 'aceite', 'visita_ok'];
+const ETAPA_ROTULO = { contactado: 'contato', valor: 'valor', fotos: 'fotos', aceite: 'ACEITE', visita_ok: 'visita' };
+
+function chipsPontas(parId) {
+  const ck = checklistCache[parId];
+  if (!ck || ck === 'loading') return '<span class="pontas" style="color:var(--tx2)">…</span>';
+  const linha = (lado, rot) => {
+    const feitos = ck[lado] || new Set();
+    const marcas = ETAPAS.map((e) =>
+      `<i class="${feitos.has(e) ? 'ck' : 'nk'}" title="${ETAPA_ROTULO[e]}${feitos.has(e) ? ' ✓' : ' pendente'}">${feitos.has(e) ? '●' : '○'}</i>`).join('');
+    const falta = ETAPAS.filter((e) => !feitos.has(e)).map((e) => ETAPA_ROTULO[e]).join(', ');
+    return `<div class="ponta" title="${rot}: falta ${falta || 'nada'}"><b>${rot}</b> ${marcas}</div>`;
+  };
+  return `<span class="pontas">${linha('cliente', 'cli')}${linha('dono', 'dono')}</span>`;
+}
+
+async function carregarChecklist(parIds) {
+  const faltam = parIds.filter((id) => !checklistCache[id]);
+  if (!faltam.length) return;
+  faltam.forEach((id) => { checklistCache[id] = 'loading'; });
+  try {
+    const r = await fila('checklist_listar', { par_ids: faltam });
+    faltam.forEach((id) => { checklistCache[id] = { cliente: new Set(), dono: new Set() }; });
+    (r.itens || []).forEach((i) => { checklistCache[i.par_id][i.lado]?.add(i.etapa); });
+    renderTabela();
+  } catch (e) { faltam.forEach((id) => { delete checklistCache[id]; }); }
+}
+
 function gavetaHtml(c) {
   const pares = (c.pares || []).filter((x) => !x.par.descartado_motivo)
     .sort((a, b) => (b.par.dono_respondeu ? 1 : 0) - (a.par.dono_respondeu ? 1 : 0));
@@ -300,6 +330,7 @@ function gavetaHtml(c) {
       <td>${nome}</td>
       <td class="num">${imovel && imovel.valor ? fmtK(imovel.valor) : '—'}</td>
       <td>${estadoDoPar(par)}</td>
+      <td>${chipsPontas(par.id)}</td>
       <td class="num">${data} · ${diasDesde(par.updated_at) ?? '?'}d</td>
       <td>${imovel && imovel.telefone_anunciante ? esc(imovel.telefone_anunciante) : '—'}</td>
       <td>
@@ -310,9 +341,10 @@ function gavetaHtml(c) {
       </td>
     </tr>`;
   }).join('');
+  setTimeout(() => carregarChecklist(pares.map(({ par }) => par.id)), 0);
   return `<div class="gaveta-titulo">Alvos de ${esc(c.pessoa.nome_exibicao)} — ${pares.length} ativos</div>
-    <table class="alvos"><thead><tr><th>Alvo</th><th>Valor</th><th>Estado</th><th>Últ. contato</th><th>Tel anunciante</th><th>Ações</th></tr></thead>
-    <tbody>${linhas || '<tr><td colspan="6" style="color:var(--tx2)">nenhum alvo ativo</td></tr>'}</tbody></table>
+    <table class="alvos"><thead><tr><th>Alvo</th><th>Valor</th><th>Estado</th><th>Pontas</th><th>Últ. contato</th><th>Tel anunciante</th><th>Ações</th></tr></thead>
+    <tbody>${linhas || '<tr><td colspan="7" style="color:var(--tx2)">nenhum alvo ativo</td></tr>'}</tbody></table>
     <div class="gaveta-acoes">
       <button class="garimpar-btn" data-g="${c.pessoa.id}">🎯 Garimpar novos alvos</button>
       <button class="editar-btn" data-e="${c.pessoa.id}">✎ Editar ficha</button>

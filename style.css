@@ -138,3 +138,11 @@ table.alvos button:hover { border-color: var(--ambar); }
 .chip.alvos-0 { background: #3a1620; color: var(--verm); }
 .chip.alvos-1 { background: #3a3012; color: var(--amarelo); }
 .chip.alvos-3 { background: #0f342b; color: var(--verde); }
+
+/* checklist de pontas na gaveta */
+.pontas { display: flex; flex-direction: column; gap: 2px; }
+.ponta { font-size: 11px; color: var(--tx2); white-space: nowrap; }
+.ponta b { display: inline-block; width: 34px; font-weight: 600; color: var(--tx2); }
+.ponta i { font-style: normal; letter-spacing: 2px; }
+.ponta i.ck { color: var(--verde); }
+.ponta i.nk { color: var(--tx2); opacity: .45; }
