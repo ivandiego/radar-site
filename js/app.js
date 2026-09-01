@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788175768';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788175768';
-import { FUNCTIONS_URL } from './config.js?v=1788175768';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788272466';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788272466';
+import { FUNCTIONS_URL } from './config.js?v=1788272466';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -166,11 +166,11 @@ async function carregarSaude() {
       const ruim = m > limiteMin;
       return `<span class="pill ${ruim ? 'ruim' : 'ok'}" title="${esc(h.detalhe || '')}">${nome}: <b>há ${m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60) + 'm' : m + 'min'}</b></span>`;
     };
-    const travadas = (s.ordens_abertas || []).filter((o) => min(o.criado_em) > 30).length;
+    const abertas = (s.ordens_abertas || []).length;
+    const travadas = (s.ordens_abertas || []).filter((o) => o.estado === 'executando' && min(o.criado_em) > 30).length;
     el.innerHTML =
-      pill('Ciclo', hb.get('ciclo'), 90) +
       pill('Vigia', hb.get('vigia'), 25) +
-      `<span class="pill ${travadas ? 'ruim' : ''}">Ordens travadas: <b>${travadas}</b></span>` +
+      `<span class="pill ${travadas ? 'ruim' : ''}">Ordens na fila: <b>${abertas}</b>${travadas ? ` (${travadas} travada${travadas > 1 ? 's' : ''})` : ''}</span>` +
       `<span class="pill ${s.fila_falhou ? 'ruim' : ''}">Envios falhados: <b>${s.fila_falhou}</b></span>` +
       `<span class="pill">Caixa: <b>${s.inbox_novas} nova${s.inbox_novas === 1 ? '' : 's'}</b></span>`;
   } catch (e) { el.innerHTML = '<span class="pill ruim">monitor indisponível</span>'; }
