@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788290088';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788290088';
-import { FUNCTIONS_URL } from './config.js?v=1788290088';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788290567';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788290567';
+import { FUNCTIONS_URL } from './config.js?v=1788290567';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -302,8 +302,7 @@ function chipsPontas(parId) {
     const marcas = ETAPAS.map((e) =>
       `<i class="${feitos.has(e) ? 'ck' : 'nk'}" title="${ETAPA_ROTULO[e]}${feitos.has(e) ? ' ✓' : ' pendente'}">${feitos.has(e) ? '●' : '○'}</i>`).join('');
     const pendentes = ETAPAS.filter((e) => !feitos.has(e)).map((e) => ETAPA_ROTULO[e]);
-    const falta = pendentes.length ? `<span class="falta">falta ${pendentes[0]}${pendentes.length > 1 ? ` +${pendentes.length - 1}` : ''}</span>` : '<span class="falta ok">completo ✓</span>';
-    return `<div class="ponta" title="${lado}: pendente ${pendentes.join(', ') || 'nada'}"><b>${lado}</b> ${marcas} ${falta}</div>`;
+    return `<div class="ponta" title="${lado}: pendente ${pendentes.join(', ') || 'nada'}"><b>${lado}</b> ${marcas}</div>`;
   };
   return `<span class="pontas">${linha('cliente')}${linha('dono')}</span>`;
 }
