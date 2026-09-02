@@ -385,6 +385,29 @@ async function carregarGarimpo() {
   } catch (e) { /* seção opcional */ }
 }
 
+async function carregarFiscalizacao() {
+  const el = document.querySelector('#fiscalizacao-lista');
+  if (!el) return;
+  try {
+    const r = await fila('violacao_listar');
+    const itens = r.itens || [];
+    const cor = { alta: 'var(--verm)', media: 'var(--ambar)', baixa: 'var(--tx2)' };
+    el.innerHTML = itens.length ? itens.map((v) =>
+      `<div class="fila-item" data-vid="${v.id}" style="border-left:3px solid ${cor[v.gravidade]}">
+        <span style="color:${cor[v.gravidade]};font-size:12px;font-weight:700">${v.tipo.replace(/_/g, ' ')}</span>
+        <span>${esc(v.descricao)}</span>
+        <button data-v="resolver" title="Marcar como resolvida">✓ resolvi</button>
+      </div>`).join('') : '<div class="fila-item" style="color:var(--verde)">nenhuma violação aberta ✓</div>';
+    const h2 = document.querySelector('#fiscalizacao h2');
+    if (h2) h2.innerHTML = `🔍 Fiscalização ${itens.length ? '<b>(' + itens.length + ' aberta' + (itens.length > 1 ? 's' : '') + ')</b>' : ''}`;
+    el.querySelectorAll('button[data-v]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        try { await fila('violacao_resolver', { id: btn.closest('[data-vid]').dataset.vid }); toast('OK ✔'); await carregarFiscalizacao(); }
+        catch (e) { toast(e.message, true); }
+      }));
+  } catch (e) { el.innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
+}
+
 document.querySelector('#varrer-agora').addEventListener('click', async () => {
   try {
     const r = await fila('varredura_criar');
@@ -511,7 +534,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarSaude();
+    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarFiscalizacao(); carregarSaude();
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
@@ -619,7 +642,7 @@ let gavetaAberta = null; // pessoa.id com a gaveta de alvos aberta
 function mostrarAba(nome) {
   abaAtual = nome;
   const hoje = nome === 'hoje';
-  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#garimpo']) {
+  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#fiscalizacao', '#garimpo']) {
     const el = document.querySelector(sel); if (el) el.hidden = !hoje;
   }
   $('#tabela').hidden = hoje;
