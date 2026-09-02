@@ -310,6 +310,26 @@ function chipsPontas(parId) {
   return `<span class="pontas">${linha('cliente')}${linha('dono')}</span>`;
 }
 
+// Linha do NEGÓCIO: a etapa do par é a da ponta mais atrasada; diz o que
+// falta, de quem, e há quanto tempo o par está parado.
+function avancoDoNegocio(parId, par) {
+  const ck = checklistCache[parId];
+  if (!ck || ck === 'loading') return '';
+  const nCliente = (ck.cliente || new Set()).size;
+  const nDono = (ck.dono || new Set()).size;
+  const atras = nCliente <= nDono ? 'cliente' : 'dono';
+  const n = Math.min(nCliente, nDono);
+  const feitos = ck[atras] || new Set();
+  const falta = ETAPAS.find((e) => !feitos.has(e));
+  const dias = diasDesde(par.updated_at) ?? '?';
+  const bola = par.dono_respondeu && falta && ['valor', 'fotos', 'aceite'].includes(falta) && atras === 'dono'
+    ? 'nós (completar a ponta)' : par.dono_respondeu ? 'nós' : 'dono';
+  const cor = n >= 4 ? 'var(--verde)' : n >= 2 ? 'var(--ambar)' : 'var(--tx2)';
+  return `<div class="negocio"><b style="color:${cor}">Negócio ${n}/5</b>
+    ${falta ? `· falta <b>${ETAPA_ROTULO[falta]}</b> do ${atras}` : '· pronto pra visita'}
+    · bola: ${bola} · parado ${dias}d</div>`;
+}
+
 async function carregarChecklist(parIds) {
   const faltam = parIds.filter((id) => !checklistCache[id]);
   if (!faltam.length) return;
@@ -349,7 +369,7 @@ function gavetaHtml(c) {
       <td>${nome}</td>
       <td class="num">${imovel && imovel.valor ? fmtK(imovel.valor) : '—'}</td>
       <td>${estadoDoPar(par)}</td>
-      <td>${chipsPontas(par.id)}</td>
+      <td>${chipsPontas(par.id)}${avancoDoNegocio(par.id, par)}</td>
       <td class="num">${data} · ${diasDesde(par.updated_at) ?? '?'}d</td>
       <td>${imovel && imovel.telefone_anunciante ? esc(imovel.telefone_anunciante) : '—'}</td>
       <td>
