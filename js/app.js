@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788290567';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788290567';
-import { FUNCTIONS_URL } from './config.js?v=1788290567';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788312546';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788312546';
+import { FUNCTIONS_URL } from './config.js?v=1788312546';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -319,6 +319,22 @@ async function carregarChecklist(parIds) {
   } catch (e) { faltam.forEach((id) => { delete checklistCache[id]; }); }
 }
 
+async function carregarConversa(pessoa) {
+  const el = document.getElementById('conversa-' + pessoa.id);
+  if (!el) return;
+  try {
+    const termo = (pessoa.nome_exibicao || '').split(/[ (]/)[0];
+    const r = await fila('conversa_recente', { termo, telefone: pessoa.telefone || pessoa.contato_privado || '' });
+    const fmt = (iso) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const tudo = [
+      ...(r.entrada || []).map((m) => ({ t: m.criado_em, quem: '⬅️ ele(a)', txt: m.texto })),
+      ...(r.saida || []).map((m) => ({ t: m.enviado_em || m.criado_em, quem: m.estado === 'enviada' ? '➡️ nós' : '➡️ nós (na fila)', txt: m.texto })),
+    ].sort((a, b) => new Date(b.t) - new Date(a.t)).slice(0, 4);
+    el.innerHTML = tudo.length ? '<b>Conversa recente:</b>' + tudo.map((m) =>
+      `<div class="msg-linha"><span class="quando">${fmt(m.t)}</span> ${m.quem}: ${esc((m.txt || '').slice(0, 90))}</div>`).join('') : '';
+  } catch (e) { el.innerHTML = ''; }
+}
+
 function gavetaHtml(c) {
   const pares = (c.pares || []).filter((x) => !x.par.descartado_motivo)
     .sort((a, b) => (b.par.dono_respondeu ? 1 : 0) - (a.par.dono_respondeu ? 1 : 0));
@@ -342,7 +358,9 @@ function gavetaHtml(c) {
     </tr>`;
   }).join('');
   setTimeout(() => carregarChecklist(pares.map(({ par }) => par.id)), 0);
+  setTimeout(() => carregarConversa(c.pessoa), 0);
   return `<div class="gaveta-titulo">Alvos de ${esc(c.pessoa.nome_exibicao)} — ${pares.length} ativos</div>
+    <div class="conversa-recente" id="conversa-${c.pessoa.id}"></div>
     <table class="alvos"><thead><tr><th>Alvo</th><th>Valor</th><th>Estado</th><th>Pontas</th><th>Últ. contato</th><th>Tel anunciante</th><th>Ações</th></tr></thead>
     <tbody>${linhas || '<tr><td colspan="7" style="color:var(--tx2)">nenhum alvo ativo</td></tr>'}</tbody></table>
     <div class="gaveta-acoes">

@@ -149,3 +149,7 @@ table.alvos button:hover { border-color: var(--ambar); }
 .ponta b { width: 46px; }
 .ponta .falta { color: var(--ambar); font-weight: 600; margin-left: 4px; }
 .ponta .falta.ok { color: var(--verde); }
+.conversa-recente { margin: 6px 0 10px; font-size: 12px; color: var(--tx2); }
+.conversa-recente b { color: var(--tx1); font-weight: 600; }
+.conversa-recente .msg-linha { padding: 1px 0; }
+.conversa-recente .quando { color: var(--tx2); opacity: .7; font-variant-numeric: tabular-nums; }
