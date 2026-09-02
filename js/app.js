@@ -169,7 +169,10 @@ async function carregarSaude() {
     const abertas = (s.ordens_abertas || []).length;
     const travadas = (s.ordens_abertas || []).filter((o) => o.estado === 'executando' && min(o.criado_em) > 30).length;
     el.innerHTML =
-      pill('Vigia', hb.get('vigia'), 25) +
+      pill('📮 Carteiro', hb.get('carteiro'), 20) +
+      pill('👂 Ouvidor', hb.get('ouvidor'), 40) +
+      pill('⏰ Relógios', hb.get('relogios'), 75) +
+      pill('🔍 Fiscal', hb.get('fiscal'), 780) +
       `<span class="pill ${travadas ? 'ruim' : ''}">Ordens na fila: <b>${abertas}</b>${travadas ? ` (${travadas} travada${travadas > 1 ? 's' : ''})` : ''}</span>` +
       `<span class="pill ${s.fila_falhou ? 'ruim' : ''}">Envios falhados: <b>${s.fila_falhou}</b></span>` +
       `<span class="pill">Caixa: <b>${s.inbox_novas} nova${s.inbox_novas === 1 ? '' : 's'}</b></span>`;
