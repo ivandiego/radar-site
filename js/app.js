@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788312546';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788312546';
-import { FUNCTIONS_URL } from './config.js?v=1788312546';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788312720';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788312720';
+import { FUNCTIONS_URL } from './config.js?v=1788312720';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -323,7 +323,7 @@ async function carregarConversa(pessoa) {
   const el = document.getElementById('conversa-' + pessoa.id);
   if (!el) return;
   try {
-    const termo = (pessoa.nome_exibicao || '').split(/[ (]/)[0];
+    const termo = (pessoa.nome_exibicao || '').split('(')[0].trim();
     const r = await fila('conversa_recente', { termo, telefone: pessoa.telefone || pessoa.contato_privado || '' });
     const fmt = (iso) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const tudo = [
