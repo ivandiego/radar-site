@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788466560';
 import { registrarNoPar as registrarNoParCom } from './registro.js?v=1788466560';
+import { montarCarteira } from './carteira.js?v=1788466560';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
@@ -37,17 +38,7 @@ export async function fetchCarteira() {
   const imvIds = [...new Set(ladosDosPares.map((l) => l.imovel_id))];
   const imoveis = imvIds.length ? lanca(await sb.from('imovel').select('id,olx_id,titulo,bairro,cidade,valor,status_inventario,link_fonte_privado,telefone_anunciante').in('id', imvIds)) : [];
 
-  const imovelPorId = new Map(imoveis.map((i) => [i.id, i]));
-  const imovelDoPar = new Map();
-  for (const l of ladosDosPares) if (!imovelDoPar.has(l.par_id)) imovelDoPar.set(l.par_id, imovelPorId.get(l.imovel_id) || null);
-  const parPorId = new Map(pares.map((p) => [p.id, p]));
-  const paresDaPessoa = new Map();
-  for (const l of lados) {
-    if (!l.pessoa_id || !parPorId.has(l.par_id)) continue;
-    if (!paresDaPessoa.has(l.pessoa_id)) paresDaPessoa.set(l.pessoa_id, new Map());
-    paresDaPessoa.get(l.pessoa_id).set(l.par_id, { par: parPorId.get(l.par_id), imovel: imovelDoPar.get(l.par_id) || null });
-  }
-  return pessoas.map((pessoa) => ({ pessoa, pares: [...(paresDaPessoa.get(pessoa.id) || new Map()).values()] }));
+  return montarCarteira(pessoas, lados, pares, ladosDosPares, imoveis); // F6: pura, testada
 }
 
 // Registro rápido: sempre por id, lendo o bloqueio atual antes de escrever e

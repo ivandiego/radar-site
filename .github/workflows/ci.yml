@@ -12,8 +12,10 @@ jobs:
         with: { node-version: 22 }
       - name: sintaxe de todo js (um SyntaxError mata o painel inteiro)
         run: for f in js/*.js; do node --check "$f"; done
-      - name: unit
-        run: node --test tests/*.test.mjs
+      - name: eslint no-undef (F6 — identificador indefinido nao e SyntaxError)
+        run: npx --yes eslint@9 js/
+      - name: unit + gate de cobertura (F6, >=80% linhas nos modulos puros)
+        run: node --test --experimental-test-coverage --test-coverage-include='js/logic.js' --test-coverage-include='js/registro.js' --test-coverage-include='js/carteira.js' --test-coverage-lines=80 tests/*.test.mjs
   e2e:
     runs-on: ubuntu-latest
     steps:
