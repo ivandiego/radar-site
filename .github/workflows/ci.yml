@@ -1,0 +1,24 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: sintaxe de todo js (um SyntaxError mata o painel inteiro)
+        run: for f in js/*.js; do node --check "$f"; done
+      - name: unit
+        run: node --test tests/*.test.mjs
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: playwright
+        run: pip3 install playwright && python3 -m playwright install --with-deps chromium-headless-shell
+      - name: E2E headless (site real + supabase stubado)
+        run: python3 tests/e2e/site_e2e.py
