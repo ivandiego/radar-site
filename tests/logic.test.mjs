@@ -120,3 +120,10 @@ test('contagem usa a regua de 96h', () => {
   ]};
   assert.equal(alvosVivos(c, NOW), 2);
 });
+
+// ---- Onda 0 (C1): esc() precisa escapar aspas (injeção de atributo/XSS)
+import { esc } from '../js/logic.js';
+test('esc: escapa aspas duplas (atributo)', () => assert.ok(!esc('a"b').includes('"')));
+test('esc: escapa < > &', () => assert.equal(esc('<b>&'), '&lt;b&gt;&amp;'));
+test('esc: aspas simples viram entidade', () => assert.ok(!esc("a'b").includes("'")));
+test('esc: nulo vira vazio', () => assert.equal(esc(null), ''));
