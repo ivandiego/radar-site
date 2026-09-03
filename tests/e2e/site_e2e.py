@@ -124,6 +124,15 @@ def main():
         page.wait_for_timeout(300)
         ok("casa Boa Vista 500" in page.inner_text("#tabela-vips"), "gaveta abre com o alvo do par")
 
+        # fix 03/09: ação que GRAVA no par (registrarNoPar → registro.js). Um import
+        # esquecido no api.js virou ReferenceError em produção e nenhum gate viu:
+        # node --check não pega identificador indefinido, e o E2E só lia.
+        page.once("dialog", lambda d: d.accept("nota de teste e2e"))
+        page.click('#tabela-vips button[data-acao="nota"]')
+        page.wait_for_timeout(800)
+        ok(page.inner_text("#toast").strip() == "Registrado ✔",
+           f"botão Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
+
     srv.shutdown()
     if erros:
         print("\nE2E VERMELHO ❌")
