@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788466264';
-import { registrarNoPar as registrarNoParCom } from './registro.js?v=1788466264';
+import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788466560';
+import { registrarNoPar as registrarNoParCom } from './registro.js?v=1788466560';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
