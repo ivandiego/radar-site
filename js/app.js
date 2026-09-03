@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788319956';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788319956';
-import { FUNCTIONS_URL } from './config.js?v=1788319956';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788399617';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788399617';
+import { FUNCTIONS_URL } from './config.js?v=1788399617';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -235,7 +235,7 @@ function renderTabela() {
       <td class="num">${dResp === null ? '—' : dResp + 'd'}</td>
       <td>${bola}</td>
       <td class="com">${fmtK(comissao)}</td>
-      <td>${pessoa.telefone || pessoa.contato_privado ? esc(pessoa.telefone || pessoa.contato_privado) : '<span class="bad">sem tel</span>'}</td>
+      <td>${(() => { const tel = pessoa.telefone || pessoa.contato_privado; if (!tel) return '<span class="bad">sem tel</span>'; const d = String(tel).replace(/\D/g, '').replace(/^55/, ''); return esc(tel) + (d.length >= 10 ? ` <a class="zap" href="https://wa.me/55${d}" target="_blank" rel="noopener" title="Abrir WhatsApp do cliente">📲</a>` : ''); })()}</td>
       <td>${/morto|sem[_ ]canal/i.test(pessoa.canal || '') ? '<span class="bad">☠</span>' : esc(pessoa.canal || '—')}</td>
     </tr>`;
     const c2 = carteiras.find((x) => x.pessoa.id === pessoa.id);
