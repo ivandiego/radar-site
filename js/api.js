@@ -49,13 +49,10 @@ export async function fetchCarteira() {
   return pessoas.map((pessoa) => ({ pessoa, pares: [...(paresDaPessoa.get(pessoa.id) || new Map()).values()] }));
 }
 
-// Registro rápido: sempre por id, sempre lendo o bloqueio atual antes de
-// escrever (nunca sobrescrever texto que não foi lido), sempre atualizado_via.
-export async function registrarNoPar(parId, monta) {
-  const atual = lanca(await sb.from('par').select('id,bloqueio,dono_respondeu,descartado_motivo').eq('id', parId).single());
-  const patch = monta(atual);
-  patch.atualizado_via = 'site';
-  return lanca(await sb.from('par').update(patch).eq('id', parId).select());
+// Registro rápido: sempre por id, lendo o bloqueio atual antes de escrever e
+// com verificação otimista (C22) — lógica pura em registro.js, testada.
+export function registrarNoPar(parId, monta, cliente = sb) {
+  return registrarNoParCom(parId, monta, cliente);
 }
 
 // Fila de envio (mora no projeto irmão; auth = login do Radar)

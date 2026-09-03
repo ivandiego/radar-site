@@ -7,7 +7,7 @@ V=$(date +%s)
 sed -i '' -E "s|(js/app\.js)(\?v=[0-9]*)?|\1?v=$V|" index.html
 sed -i '' -E "s|(style\.css)(\?v=[0-9]*)?|\1?v=$V|" index.html
 sed -i '' -E 's|from '"'"'\./(logic\|api\|config)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
-sed -i '' -E 's|from '"'"'\./(config)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/api.js
+sed -i '' -E 's|from '"'"'\./(config\|registro)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/api.js
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 # gates (PR 3 da revisão): sintaxe de TODO js + unit + E2E Playwright real —
 # um SyntaxError em app.js derrubava o painel inteiro e o deploy não via
