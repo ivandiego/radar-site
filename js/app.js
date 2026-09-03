@@ -1,6 +1,6 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788399669';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788399669';
-import { FUNCTIONS_URL } from './config.js?v=1788399669';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788400550';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788400550';
+import { FUNCTIONS_URL } from './config.js?v=1788400550';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
