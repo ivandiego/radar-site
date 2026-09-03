@@ -412,6 +412,34 @@ async function carregarGarimpo() {
   } catch (e) { /* seção opcional */ }
 }
 
+async function carregarAgenda() {
+  const el = document.querySelector('#agenda-lista');
+  if (!el) return;
+  try {
+    const r = await fila('agenda_listar');
+    const itens = r.itens || [];
+    const agora = Date.now();
+    el.innerHTML = itens.length ? itens.map((c) => {
+      const vencido = new Date(c.prazo) < agora;
+      const quando = new Date(c.prazo).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      return `<div class="fila-item" data-cid="${c.id}" style="border-left:3px solid ${vencido ? 'var(--verm)' : 'var(--ambar)'}">
+        <span style="font-size:12px;font-weight:700;color:${c.quem_deve === 'nos' ? 'var(--ambar)' : 'var(--tx2)'}">${c.quem_deve === 'nos' ? 'NÓS devemos' : 'ELES devem'}${vencido ? ' · VENCIDO' : ' · ' + quando}</span>
+        <span>${esc(c.rotulo || c.destino)}</span>
+        <span class="bola">${esc((c.o_que || '').slice(0, 60))}</span>
+        <button data-c="cumprir" title="Marcar como cumprido">✓ feito</button>
+      </div>`;
+    }).join('') : '<div class="fila-item" style="color:var(--verde)">agenda em dia ✓</div>';
+    const h2 = document.querySelector('#agenda h2');
+    const vencidos = itens.filter((c) => new Date(c.prazo) < agora).length;
+    if (h2) h2.innerHTML = `📅 Agenda ${vencidos ? '<b>(' + vencidos + ' vencido' + (vencidos > 1 ? 's' : '') + ')</b>' : ''}`;
+    el.querySelectorAll('button[data-c]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        try { await fila('agenda_cumprir', { id: btn.closest('[data-cid]').dataset.cid }); toast('OK ✔'); await carregarAgenda(); }
+        catch (e) { toast(e.message, true); }
+      }));
+  } catch (e) { el.innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
+}
+
 async function carregarFiscalizacao() {
   const el = document.querySelector('#fiscalizacao-lista');
   if (!el) return;
@@ -561,7 +589,7 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
-    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarFiscalizacao(); carregarSaude();
+    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarAgenda(); carregarFiscalizacao(); carregarSaude();
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
@@ -669,7 +697,7 @@ let gavetaAberta = null; // pessoa.id com a gaveta de alvos aberta
 function mostrarAba(nome) {
   abaAtual = nome;
   const hoje = nome === 'hoje';
-  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#fiscalizacao', '#garimpo']) {
+  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#agenda', '#fiscalizacao', '#garimpo']) {
     const el = document.querySelector(sel); if (el) el.hidden = !hoje;
   }
   $('#tabela').hidden = hoje;
