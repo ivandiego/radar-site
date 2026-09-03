@@ -286,7 +286,11 @@ function renderTabela() {
 }
 
 function estadoDoPar(par) {
-  if (par.dono_respondeu) return '<span class="est-ok">✅ respondeu</span>';
+  if (par.dono_respondeu) {
+    const nota = (par.notas || par.bloqueio || '');
+    const canal = /whats/i.test(nota) ? 'Whats' : /olx|thread|chat da olx/i.test(nota) ? 'OLX' : '';
+    return `<span class="est-ok" title="${esc(nota).slice(0, 200)}">✅ respondeu${canal ? ' (' + canal + ')' : ''}</span>`;
+  }
   const d = diasDesde(par.updated_at) ?? 99;
   if (d >= 2) return `<span class="est-mudo">mudo há ${d}d</span>`;
   return '<span class="est-espera">⏳ aguardando</span>';
