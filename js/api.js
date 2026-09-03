@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788404996';
+import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788448995';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
