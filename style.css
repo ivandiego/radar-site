@@ -155,3 +155,4 @@ table.alvos button:hover { border-color: var(--ambar); }
 .conversa-recente .quando { color: var(--tx2); opacity: .7; font-variant-numeric: tabular-nums; }
 .negocio { font-size: 12px; color: var(--tx2); margin-top: 3px; white-space: nowrap; }
 .negocio b { font-weight: 700; }
+.alvos a.zap { text-decoration: none; font-size: 14px; margin-left: 4px; }

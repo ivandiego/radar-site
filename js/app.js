@@ -371,7 +371,7 @@ function gavetaHtml(c) {
       <td>${estadoDoPar(par)}</td>
       <td>${chipsPontas(par.id)}${avancoDoNegocio(par.id, par)}</td>
       <td class="num">${data} · ${diasDesde(par.updated_at) ?? '?'}d</td>
-      <td>${imovel && imovel.telefone_anunciante ? esc(imovel.telefone_anunciante) : '—'}</td>
+      <td>${imovel && imovel.telefone_anunciante ? esc(imovel.telefone_anunciante) + (String(imovel.telefone_anunciante).replace(/\D/g, '').length >= 10 ? ` <a class="zap" href="https://wa.me/55${String(imovel.telefone_anunciante).replace(/\D/g, '').replace(/^55/, '')}" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">📲</a>` : '') : '—'}</td>
       <td>
         <button data-acao="ia-redigir">✍️ Responder</button>
         <button data-acao="respondeu">Respondeu</button>
