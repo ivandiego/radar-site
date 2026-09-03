@@ -1,4 +1,4 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788404996';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788404996';
 import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc } from './logic.js?v=1788404996';
 import { FUNCTIONS_URL } from './config.js?v=1788404996';
 
@@ -166,7 +166,7 @@ async function carregarSaude() {
       return `<span class="pill ${ruim ? 'ruim' : 'ok'}" title="${esc(h.detalhe || '')}">${nome}: <b>há ${m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60) + 'm' : m + 'min'}</b></span>`;
     };
     const abertas = (s.ordens_abertas || []).length;
-    const travadas = (s.ordens_abertas || []).filter((o) => o.estado === 'executando' && min(o.criado_em) > 30).length;
+    const travadas = (s.ordens_abertas || []).filter((o) => o.estado === 'executando' && min(o.claimed_em || o.criado_em) > 30).length;
     el.innerHTML =
       pill('📮 Carteiro', hb.get('carteiro'), 20) +
       pill('👂 Ouvidor', hb.get('ouvidor'), 40) +
@@ -221,7 +221,6 @@ function renderTabela() {
     const meta = metaAlvosDe(pessoa);
     const clsAlvos = alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn';
     const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
-    const problema = pessoa.promessa_pendente || /morto|sem[_ ]canal/i.test(pessoa.proximo_passo || '') && false;
     const aberta = gavetaAberta === pessoa.id;
     const linha = `<tr class="vip-row ${aberta ? 'aberta' : ''} ${pessoa.promessa_pendente ? 'problema' : ''}" data-pessoa="${pessoa.id}">
       <td class="nome-cel">${aberta ? '▾ ' : '▸ '}${esc(pessoa.nome_exibicao)}${/^https:\/\/(www\.|sp\.)?olx\.com\.br\//.test(pessoa.link_thread_olx_privado || '') ? ` <a href="${esc(pessoa.link_thread_olx_privado)}" target="_blank" rel="noopener" title="Anúncio do cliente na OLX">↗</a>` : ''}</td>
@@ -650,7 +649,6 @@ $('#novo-form').addEventListener('submit', async (ev) => {
   const f = new FormData(ev.target);
   const hoje = hojeBR();
   try {
-    const { sb } = await import('./api.js');
     if (editandoId) {
       const { error: e2 } = await sb.from('pessoa').update({
         nome_exibicao: f.get('nome'),
