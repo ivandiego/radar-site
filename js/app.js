@@ -1,5 +1,5 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila } from './api.js?v=1788404996';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe } from './logic.js?v=1788404996';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc } from './logic.js?v=1788404996';
 import { FUNCTIONS_URL } from './config.js?v=1788404996';
 
 const $ = (s) => document.querySelector(s);
@@ -12,7 +12,6 @@ function toast(msg, err = false) {
 }
 
 function fmtK(v) { return 'R$ ' + Math.round(v / 1000) + 'k'; }
-function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 function hojeBR() { return new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
 
 function chipAlvos(n, meta = 3) {

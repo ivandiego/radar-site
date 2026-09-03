@@ -3,6 +3,14 @@
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
+// Escape pra HTML E atributos (C1, revisão 03/09): a versão antiga via DOM não
+// escapava aspas — texto de chat de lead dentro de title="..." quebrava/injetava.
+export function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 export function diasDesde(iso, now = new Date()) {
   if (!iso) return null;
   const t = new Date(iso).getTime();
