@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 V=$(date +%s)
 sed -i '' -E "s|(js/app\.js)(\?v=[0-9]*)?|\1?v=$V|" index.html
 sed -i '' -E "s|(style\.css)(\?v=[0-9]*)?|\1?v=$V|" index.html
-sed -i '' -E 's|from '"'"'\./(logic\|api\|config\|setores/painel\|setores/diario\|setores/redacao\|setores/expedicao\|setores/auditoria\|setores/recepcao\|setores/cobranca\|setores/garimpo\|setores/fiscalizacao)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
+sed -i '' -E 's|from '"'"'\./(logic\|api\|config\|ui\|setores/carteira\|setores/painel\|setores/diario\|setores/redacao\|setores/expedicao\|setores/auditoria\|setores/recepcao\|setores/cobranca\|setores/garimpo\|setores/fiscalizacao)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
 sed -i '' -E 's|from '"'"'\./(config\|registro\|carteira)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/api.js
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 # gates (PR 3 da revisão): sintaxe de TODO js + unit + E2E Playwright real —

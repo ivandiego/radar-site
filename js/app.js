@@ -1,6 +1,6 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788530695';
 import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes, payloadGarimpo } from './logic.js?v=1788530695';
-import { FUNCTIONS_URL } from './config.js?v=1788530695';
+import { toast, abrirDialogo, invocar } from './ui.js?v=1788530695';
 import * as painel from './setores/painel.js?v=1788530695';
 import * as diario from './setores/diario.js?v=1788530695';
 import * as redacao from './setores/redacao.js?v=1788530695';
@@ -14,11 +14,6 @@ import * as fiscalizacao from './setores/fiscalizacao.js?v=1788530695';
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
 
-function toast(msg, err = false) {
-  const t = $('#toast');
-  t.textContent = msg; t.className = err ? 'err' : ''; t.hidden = false;
-  setTimeout(() => { t.hidden = true; }, 3500);
-}
 
 function fmtK(v) { return 'R$ ' + Math.round(v / 1000) + 'k'; }
 function hojeBR() { return new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
@@ -289,29 +284,7 @@ function contextoDoPar(parId) {
   return '';
 }
 
-function abrirDialogo(titulo, texto, aplicar = null) {
-  $('#ia-fila').hidden = true;
-  const d = $('#ia-dialog');
-  $('#ia-titulo').textContent = titulo;
-  $('#ia-texto').value = texto;
-  const btn = $('#ia-aplicar');
-  btn.hidden = !aplicar;
-  btn.onclick = aplicar || null;
-  d.showModal();
-}
 
-async function invocar(fn, body) {
-  const s = await sessao();
-  if (!s) throw new Error('sessão expirada, entre de novo');
-  const r = await fetch(`${FUNCTIONS_URL}/${fn}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.access_token },
-    body: JSON.stringify(body),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok || data.erro) throw new Error(data.erro || 'IA indisponível (' + r.status + ')');
-  return data;
-}
 
 async function iaRedigir(parId) {
   const tipo = prompt('Tipo: sondagem / resposta / cobranca', 'resposta');
@@ -320,8 +293,7 @@ async function iaRedigir(parId) {
   try {
     const { texto } = await invocar('redigir', { tipo: tipo.trim(), contexto: contextoDoPar(parId) });
     ultimoRascunho = { parId, texto };
-    abrirDialogo('Rascunho (' + tipo + ') — revise antes de usar', texto);
-    $('#ia-fila').hidden = false;
+    abrirDialogo('Rascunho (' + tipo + ') — revise antes de usar', texto, null, true);
   } catch (e) { toast(e.message, true); }
 }
 
