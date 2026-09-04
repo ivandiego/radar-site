@@ -69,6 +69,9 @@ FILA = {
         "estado": "pendente_aprovacao", "criado_em": "2026-09-03T10:00:00Z",
     }]},
     "inbox_listar": {"itens": []},
+    "recepcao_listar": {"chegadas": [{"id": "m1", "canal": "whatsapp", "remetente": "Mesach", "destino": "5511949564957", "texto": "Posso te ligar?", "hora_olx": "09:27, 9/3/2026", "criado_em": "2026-09-03T12:28:00Z", "estado": "nova"}], "enviadas": [], "ordens": []},
+    "varredura_criar": {"item": {"id": "v1", "estado": "pendente"}},
+    "inbox_marcar": {"item": {"id": "m1", "estado": "ignorada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
     "garimpo_listar": {"itens": []},
@@ -160,6 +163,23 @@ def main():
            f"botão Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
 
         # Entrega 1: Painel por setores com evidências + Diário com "Abrir prova"
+        # Entrega 4: Recepção — faixa comum, o que chegou, Varrer agora, Escanear QR, Ignorar
+        page.click('#setores a[href="#recepcao"]')
+        page.wait_for_selector('#setor table.chegadas tr[data-mid]')
+        ok("Coletor + Ouvidor" in page.inner_text('#setor .faixa-setor'), "recepção: faixa comum com quem trabalha")
+        ok("Posso te ligar?" in page.inner_text('#setor') and "03/09 09:27" in page.inner_text('#setor'), "recepção: mensagem com hora do canal")
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor button.varrer')
+        page.wait_for_timeout(300)
+        ok("varredura_criar" in acoes_fila, "recepção: Varrer agora dispara varredura_criar")
+        page.click('#setor button.qr')
+        page.wait_for_timeout(200)
+        ok("chrome-robo" in page.input_value('#ia-texto'), "recepção: Escanear QR mostra a instrução")
+        page.click('#ia-fechar')
+        page.click('#setor tr[data-mid="m1"] button.ignorar')
+        page.wait_for_timeout(300)
+        ok("inbox_marcar" in acoes_fila, "recepção: Ignorar dispara inbox_marcar")
+
         # Entrega 3: Auditoria por VIP — árvore, selos, 4 colunas, Conferir agora, Amostra
         page.click('#setores a[href="#auditoria"]')
         page.wait_for_selector('#setor select.vip')
