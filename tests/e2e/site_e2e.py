@@ -34,7 +34,7 @@ FIX = {
     "imovel": [{
         "id": "i1", "olx_id": "111", "titulo": "Casa Boa Vista", "bairro": "Boa Vista",
         "cidade": "Suzano", "valor": 500000, "status_inventario": "ativo",
-        "link_fonte_privado": None, "telefone_anunciante": None,
+        "link_fonte_privado": None, "telefone_anunciante": "(13) 99999-0001",
     }],
 }
 
@@ -44,6 +44,8 @@ function builder(tabela) {
   const b = { _rows: (FIX[tabela] || []).slice(), _single: false };
   for (const m of ['select','in','or','not','eq','is','order','limit','update','insert','upsert','delete'])
     b[m] = () => b;
+  // .not(col,'is',null) filtra de verdade: sem isso o par pega o lado sem imóvel (stub mentia)
+  b.not = (c, op, v) => { if (op === 'is' && v === null) b._rows = b._rows.filter((r) => r[c] != null); return b; };
   b.single = () => { b._single = true; return b; };
   b.then = (res) => res({ data: b._single ? (b._rows[0] || null) : b._rows, error: null });
   return b;
@@ -89,6 +91,11 @@ FILA = {
     "expedicao_listar": {"enviadas": [{"id": "e1", "destino_rotulo": "Vitor", "canal": "whatsapp", "texto": "Boa noite Vitor", "enviado_em": "2026-09-01T22:58:00Z", "prova_envio": "whats 22:58 trecho"}],
                          "falhas": [{"id": "x1", "destino": "5513981780293", "destino_rotulo": "Maracanã", "canal": "whatsapp", "texto": "Oi, Ivan…", "erro": "WhatsApp Web nao reconhece", "criado_em": "2026-09-02T23:00:00Z"}]},
     "tentar_de_novo": {"item": {"id": "x1", "estado": "aprovada"}},
+    "auditoria_vip": {"por_telefone": {
+        "49564957": {"auditoria": {"selo": "auditada", "motivos": [], "linhas": [
+            {"quem": "ele(a)", "texto": "Posso te ligar?", "hora_canal": "2026-09-02T22:29:00.000Z", "hora_registro": "2026-09-02T22:30:00Z", "prova": "mensagem_recebida:r1", "ok": True, "motivo": None}]}},
+        "99990001": {"auditoria": {"selo": "divergente", "motivos": ["lacuna: possível perda…"], "linhas": []}}}},
+    "conferir_vip": {"item": {"id": "o1", "estado": "pendente"}},
     "mandei_eu_mesmo": {"item": {"id": "x1", "estado": "enviada"}},
     "diario_listar": {"itens": [{"setor": "recepcao", "tipo": "chat_lido", "hora": "2026-09-03T22:00:10Z", "quem": "Nani",
                                  "texto": "Nani: dele(a): Bom dia 200 mil", "prova_ref": "chat_varrido:5513997790904"}]},
@@ -153,6 +160,20 @@ def main():
            f"botão Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
 
         # Entrega 1: Painel por setores com evidências + Diário com "Abrir prova"
+        # Entrega 3: Auditoria por VIP — árvore, selos, 4 colunas, Conferir agora, Amostra
+        page.click('#setores a[href="#auditoria"]')
+        page.wait_for_selector('#setor select.vip')
+        page.select_option('#setor select.vip', 'm1')
+        page.wait_for_selector('#setor .conversa-aud')
+        ok("2 conversas" in page.inner_text('#setor .resumo-aud') and "1 auditada" in page.inner_text('#setor .resumo-aud') and "1 divergente" in page.inner_text('#setor .resumo-aud'), "auditoria: resumo com selos")
+        ok("02/09 19:29" in page.inner_text('#setor .conversa-aud') or "02/09 22:29" in page.inner_text('#setor .conversa-aud'), "auditoria: hora do canal na linha")
+        ok("lacuna" in page.inner_text('#setor'), "auditoria: motivo da divergência escrito")
+        page.click('#setor button.conferir')
+        page.wait_for_timeout(400)
+        ok("conferir_vip" in acoes_fila, "auditoria: Conferir agora dispara conferir_vip")
+        page.click('#setor button.amostra')
+        page.wait_for_timeout(400)
+        ok(acoes_fila.count("conferir_vip") >= 2, "auditoria: Amostra de 5 dispara conferir_vip")
         page.click('#setores a[href="#painel"]')
         page.wait_for_selector('#setor .cartao-setor')
         ok(page.locator('#setor .cartao-setor').count() == 6, "painel: 6 cartões, um por setor")

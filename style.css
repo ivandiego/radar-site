@@ -190,3 +190,11 @@ table.diario td.hora { white-space: nowrap; color: var(--tx2); }
 .grupo-redacao .acoes button, .falhas .acoes button { margin-right: 8px; margin-top: 6px; }
 .falhas li, .enviadas li { list-style: none; margin: 8px 0; padding-bottom: 8px; border-bottom: 1px dashed var(--linha); }
 .falhas .erro { color: var(--verm); }
+
+/* Entrega 3: Auditoria */
+.resumo-aud { margin: 10px 0 14px; }
+.conversa-aud { border: 1px solid var(--linha); border-left: 4px solid var(--tx2); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+.conversa-aud.auditada { border-left-color: var(--verde); } .conversa-aud.divergente { border-left-color: var(--amarelo); } .conversa-aud.nao_varrida { border-left-color: var(--verm); }
+.conversa-aud .motivos { color: var(--amarelo); margin: 6px 0; }
+table.aud { width: 100%; border-collapse: collapse; margin-top: 6px; } table.aud th, table.aud td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+table.aud tr.ruim td { color: var(--verm); }
