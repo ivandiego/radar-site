@@ -53,3 +53,14 @@ test('cartoesDoPainel: setor com alarme aberto fica em atenção mesmo sem trava
   const p = { setores: { recepcao: { ultima_rodada: '2026-09-03T22:00:00Z', fez: [], travado: [] } }, alarmes: [{ id: 'a1', setor: 'recepcao', hora: '2026-09-04T01:00:00Z', texto: 'lacuna: x', motivo: 'lacuna' }] };
   assert.equal(cartoesDoPainel(p)[0].estado, 'atencao');
 });
+
+// Entrega 4: faixa comum das telas de setor
+import { faixaDoSetor } from '../js/painel.js';
+test('faixaDoSetor: título, quem, rodada em BRT, fez, travado e alarmes do setor', () => {
+  const p = { setores: { recepcao: { ultima_rodada: '2026-09-04T01:00:00Z', fez: [{ tipo: 'chat_lido', n: 37 }], travado: ['WhatsApp deslogado (QR) desde 14:40'] } }, alarmes: [{ setor: 'recepcao' }, { setor: 'redacao' }] };
+  const f = faixaDoSetor(p, 'recepcao', 'America/Sao_Paulo');
+  assert.equal(f.titulo, 'Recepção'); assert.equal(f.quem, 'Coletor + Ouvidor');
+  assert.equal(f.rodada, '22:00'); assert.equal(f.fez, '37 chats lidos');
+  assert.deepEqual(f.travado, ['WhatsApp deslogado (QR) desde 14:40']); assert.equal(f.alarmes, 1); assert.equal(f.estado, 'atencao');
+  assert.equal(faixaDoSetor({}, 'garimpo', 'UTC').estado, 'parado');
+});

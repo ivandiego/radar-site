@@ -152,3 +152,12 @@ test('aplicarInteracoes: caixa mais velha que o site não rebaixa', () => {
   const c = aplicarInteracoes([{ pessoa: p, pares: [] }], { '99990000': { ultima_recebida: '2026-08-01T00:00:00Z', ultima_enviada: null, ultima_palavra: 'deles' } });
   assert.equal(c[0].pessoa.ultima_interacao, '2026-09-02T00:00:00Z');
 });
+
+// Entrega 4: payload único de "Garimpar alvos" (Carteira e Garimpo)
+import { payloadGarimpo } from '../js/logic.js';
+test('payloadGarimpo: mesmo payload do botão da Carteira', () => {
+  const p = { id: 'p1', nome_exibicao: 'Mesach', o_que_busca: 'apto 2q', o_que_tem_texto: 'casa', valor_do_que_tem: 500000, diferenca_max: 100000, criterios: ['meta_alvos: 4'] };
+  const g = payloadGarimpo(p);
+  assert.equal(g.pessoa_id, 'p1'); assert.equal(g.pessoa_nome, 'Mesach'); assert.equal(g.meta, 4);
+  assert.equal(g.criterios, 'Busca: apto 2q. Tem: casa (500000). Adiciona: 100000. ["meta_alvos: 4"]');
+});

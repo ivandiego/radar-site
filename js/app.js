@@ -1,11 +1,15 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788525022';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788525022';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes, payloadGarimpo } from './logic.js?v=1788525022';
 import { FUNCTIONS_URL } from './config.js?v=1788525022';
 import * as painel from './setores/painel.js?v=1788525022';
 import * as diario from './setores/diario.js?v=1788525022';
 import * as redacao from './setores/redacao.js?v=1788525022';
 import * as expedicao from './setores/expedicao.js?v=1788525022';
 import * as auditoria from './setores/auditoria.js?v=1788525022';
+import * as recepcao from './setores/recepcao.js?v=1788525022';
+import * as cobranca from './setores/cobranca.js?v=1788525022';
+import * as garimpo from './setores/garimpo.js?v=1788525022';
+import * as fiscalizacao from './setores/fiscalizacao.js?v=1788525022';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -47,146 +51,13 @@ function renderAlertas() {
 }
 
 let ultimoRascunho = null; // {parId, texto}
-let pendFila = 0, novasInbox = 0;
-function atualizarBadge() {
-  const b = document.querySelector('#badge-hoje');
-  if (!b) return;
-  const n = pendFila + novasInbox;
-  b.hidden = !n;
-  b.textContent = n;
-}
 
-function renderFilaEnvio(itens) {
-  const cores = { pendente_aprovacao: 'var(--amarelo)', aprovada: 'var(--roxo)', digitada: 'var(--ambar)', enviada: 'var(--verde)', rejeitada: 'var(--tx2)', falhou: 'var(--verm)' };
-  const rotulos = { digitada: '✏️ no Whats — só apertar ENVIAR lá' };
-  $('#fila-envio-lista').innerHTML = itens.length ? itens.map((i) =>
-    `<div class="fila-item" data-fid="${i.id}">
-      <span style="color:${cores[i.estado]};font-size:12px;font-weight:700">${rotulos[i.estado] || i.estado.replace('_', ' ')}</span>
-      <span>${esc(i.destino_rotulo || i.destino)} · ${i.canal}</span>
-      <span class="bola">${esc((i.texto || '').slice(0, 40))}…</span>
-      ${i.estado === 'pendente_aprovacao' ? '<button data-f="aprovar">✔</button><button data-f="rejeitar">✕</button>' : ''}
-      ${i.canal === 'whatsapp' ? '<button data-f="abrir" title="Abrir no WhatsApp com a mensagem digitada">📲</button><button data-f="copiar" title="Copiar texto">⧉</button>' : ''}
-      ${i.canal === 'whatsapp' && ['pendente_aprovacao', 'aprovada', 'digitada'].includes(i.estado) ? '<button data-f="enviei" title="Marcar como enviada">✓ enviei</button>' : ''}
-    </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">vazia</div>';
-  pendFila = itens.filter((i) => i.estado === 'pendente_aprovacao').length;
-  document.querySelector('#fila-envio h2').innerHTML = `Fila de envio ${pendFila ? '<b>(' + pendFila + ' pra aprovar)</b>' : ''}`;
-  atualizarBadge();
-  document.querySelectorAll('#fila-envio-lista button').forEach((btn) =>
-    btn.addEventListener('click', async () => {
-      const id = btn.closest('[data-fid]').dataset.fid;
-      const item = itens.find((x) => x.id === id);
-      if (btn.dataset.f === 'copiar') { await navigator.clipboard.writeText(item.texto); toast('Copiado ✔'); return; }
-      if (btn.dataset.f === 'abrir') {
-        const num = String(item.destino).replace(/\D/g, '');
-        window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(item.texto), '_blank');
-        return;
-      }
-      try {
-        if (btn.dataset.f === 'enviei') {
-          if (item.estado === 'pendente_aprovacao') await fila('aprovar', { id });
-          await fila('marcar', { id, estado: 'enviada', prova_envio: 'enviado manualmente pelo Ivan via wa.me' });
-        } else {
-          await fila(btn.dataset.f, { id });
-        }
-        toast('OK ✔'); await carregarFilaEnvio();
-      } catch (e) { toast(e.message, true); }
-    }));
-}
 
-async function carregarFilaEnvio() {
-  try { renderFilaEnvio((await fila('listar')).itens || []); }
-  catch (e) { $('#fila-envio-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
-}
 
-// ---- Caixa de entrada ----
-let inboxRespondendo = null; // item da inbox sendo respondido via dialog IA
 
-function contextoDaInbox(item) {
-  // tenta achar o par pelo destino (list-id) ou pelo nome do remetente no apelido
-  for (const c of carteiras) {
-    for (const { par, imovel } of c.pares) {
-      const olxId = imovel && imovel.olx_id;
-      if ((olxId && String(item.destino) === String(olxId)) ||
-          (par.apelido || '').toLowerCase().includes((item.remetente || '§').toLowerCase())) {
-        return contextoDoPar(par.id) + `\n\nMENSAGEM RECEBIDA AGORA de ${item.remetente}: "${item.texto}"`;
-      }
-    }
-  }
-  return `Mensagem recebida no chat da OLX de ${item.remetente}` +
-    (item.anuncio ? ` (anúncio: ${item.anuncio})` : '') + `: "${item.texto}"\n` +
-    'ATENÇÃO: não há ficha de cliente ligada a esta conversa. NÃO invente dados de cliente ou imóvel — responda só com o que está na mensagem, e se faltar informação, faça UMA pergunta objetiva.';
-}
 
-function renderInbox(itens) {
-  const novas = itens.filter((i) => i.estado === 'nova');
-  const lista = novas.length ? novas : itens.slice(0, 3);
-  $('#inbox-lista').innerHTML = lista.length ? lista.map((i) =>
-    `<div class="inbox-item ${i.estado !== 'nova' ? 'lida' : ''}" data-iid="${i.id}">
-      <span class="de">${esc(i.remetente)}</span>
-      ${i.anuncio ? `<span class="quando">${esc(i.anuncio.slice(0, 50))}</span>` : ''}
-      <span class="quando">${esc(i.hora_olx || '')}${i.estado !== 'nova' ? ' · ' + i.estado : ''}</span>
-      <div class="msg">${esc(i.texto.slice(0, 300))}</div>
-      ${i.estado === 'nova' ? `<div class="acoes">
-        <button class="responder" data-i="responder">✍️ Responder</button>
-        <button data-i="ignorar">Ignorar</button>
-      </div>` : ''}
-    </div>`).join('') : '<div class="fila-item" style="color:var(--tx2)">nada novo</div>';
-  const h2 = document.querySelector('#inbox h2');
-  h2.innerHTML = `Caixa de entrada ${novas.length ? '<b>(' + novas.length + ' nova' + (novas.length > 1 ? 's' : '') + ')</b>' : ''}`;
-  novasInbox = novas.length;
-  atualizarBadge();
-  document.querySelectorAll('#inbox-lista button').forEach((btn) =>
-    btn.addEventListener('click', async () => {
-      const id = btn.closest('[data-iid]').dataset.iid;
-      const item = itens.find((x) => x.id === id);
-      if (btn.dataset.i === 'ignorar') {
-        try { await fila('inbox_marcar', { id, estado: 'ignorada' }); toast('OK ✔'); await carregarInbox(); }
-        catch (e) { toast(e.message, true); }
-        return;
-      }
-      // responder: IA redige, dialog abre com "+ Fila" sem prompts
-      toast('Redigindo…');
-      try {
-        const { texto } = await invocar('redigir', { tipo: 'resposta', contexto: contextoDaInbox(item) });
-        inboxRespondendo = item;
-        ultimoRascunho = null;
-        abrirDialogo('Resposta pra ' + item.remetente + ' — revise e mande pra fila', texto);
-        $('#ia-fila').hidden = false;
-      } catch (e) { toast(e.message, true); }
-    }));
-}
 
-async function carregarSaude() {
-  const el = document.querySelector('#saude');
-  if (!el) return;
-  try {
-    const s = await fila('saude');
-    const agora = Date.now();
-    const min = (iso) => Math.round((agora - new Date(iso).getTime()) / 60000);
-    const hb = new Map((s.heartbeats || []).map((h) => [h.chave, h]));
-    const pill = (nome, h, limiteMin) => {
-      if (!h) return `<span class="pill ruim">${nome}: <b>nunca rodou</b></span>`;
-      const m = min(h.atualizado_em);
-      const ruim = m > limiteMin;
-      return `<span class="pill ${ruim ? 'ruim' : 'ok'}" title="${esc(h.detalhe || '')}">${nome}: <b>há ${m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60) + 'm' : m + 'min'}</b></span>`;
-    };
-    const abertas = (s.ordens_abertas || []).length;
-    const travadas = (s.ordens_abertas || []).filter((o) => o.estado === 'executando' && min(o.claimed_em || o.criado_em) > 30).length;
-    el.innerHTML =
-      pill('📮 Carteiro', hb.get('carteiro'), 20) +
-      pill('👂 Ouvidor', hb.get('ouvidor'), 40) +
-      pill('⏰ Relógios', hb.get('relogios'), 75) +
-      pill('🔍 Fiscal', hb.get('fiscal'), 780) +
-      `<span class="pill ${travadas ? 'ruim' : ''}">Ordens na fila: <b>${abertas}</b>${travadas ? ` (${travadas} travada${travadas > 1 ? 's' : ''})` : ''}</span>` +
-      `<span class="pill ${s.fila_falhou ? 'ruim' : ''}">Envios falhados: <b>${s.fila_falhou}</b></span>` +
-      `<span class="pill">Caixa: <b>${s.inbox_novas} nova${s.inbox_novas === 1 ? '' : 's'}</b></span>`;
-  } catch (e) { el.innerHTML = '<span class="pill ruim">monitor indisponível</span>'; }
-}
 
-async function carregarInbox() {
-  try { renderInbox((await fila('inbox_listar')).itens || []); }
-  catch (e) { $('#inbox-lista').innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
-}
 
 let tabelaSoVips = true;
 let ordem = { col: null, asc: false };
@@ -279,12 +150,8 @@ function renderTabela() {
       if (!c) return;
       const p = c.pessoa;
       try {
-        const r = await fila('garimpo_criar', {
-          pessoa_id: p.id, pessoa_nome: p.nome_exibicao, meta: metaAlvosDe(p),
-          criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
-        });
+        const r = await fila('garimpo_criar', payloadGarimpo(p)); // entrega 4: payload único (Carteira e Garimpo)
         toast(r.duplicada ? 'Já existe ordem aberta pra este VIP' : 'Ordem de garimpo criada ✔ — o robô executa');
-        await carregarGarimpo();
       } catch (e) { toast(e.message, true); }
     }));
 }
@@ -400,80 +267,10 @@ function gavetaHtml(c) {
     </div>`;
 }
 
-async function carregarGarimpo() {
-  try {
-    const [g, v] = await Promise.all([fila('garimpo_listar'), fila('varredura_listar')]);
-    const linha = (icone, nome, i) =>
-      `<div class="fila-item"><span style="color:${i.estado === 'concluida' ? 'var(--verde)' : 'var(--amarelo)'};font-size:12px;font-weight:700">${i.estado}</span>
-       <span>${icone} ${esc(nome)}</span>
-       <span class="bola">${esc((i.resultado || '').slice(0, 60))}</span></div>`;
-    const gi = (g.itens || []).filter((i) => ['pendente', 'executando'].includes(i.estado) || i.estado === 'concluida')
-      .slice(0, 4).map((i) => linha('🎯', `${i.pessoa_nome} (meta ${i.meta})`, i));
-    const vi = (v.itens || []).slice(0, 2).map((i) => linha('📡', 'Varredura OLX + WhatsApp', i));
-    const el = document.querySelector('#garimpo-lista');
-    if (!el) return;
-    el.innerHTML = [...vi, ...gi].join('') || '<div class="fila-item" style="color:var(--tx2)">nenhuma ordem</div>';
-  } catch (e) { /* seção opcional */ }
-}
 
-async function carregarAgenda() {
-  const el = document.querySelector('#agenda-lista');
-  if (!el) return;
-  try {
-    const r = await fila('agenda_listar');
-    const itens = r.itens || [];
-    const agora = Date.now();
-    el.innerHTML = itens.length ? itens.map((c) => {
-      const vencido = new Date(c.prazo) < agora;
-      const quando = new Date(c.prazo).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      return `<div class="fila-item" data-cid="${c.id}" style="border-left:3px solid ${vencido ? 'var(--verm)' : 'var(--ambar)'}">
-        <span style="font-size:12px;font-weight:700;color:${c.quem_deve === 'nos' ? 'var(--ambar)' : 'var(--tx2)'}">${c.quem_deve === 'nos' ? 'NÓS devemos' : 'ELES devem'}${vencido ? ' · VENCIDO' : ' · ' + quando}</span>
-        <span>${esc(c.rotulo || c.destino)}</span>
-        <span class="bola">${esc((c.o_que || '').slice(0, 60))}</span>
-        <button data-c="cumprir" title="Marcar como cumprido">✓ feito</button>
-      </div>`;
-    }).join('') : '<div class="fila-item" style="color:var(--verde)">agenda em dia ✓</div>';
-    const h2 = document.querySelector('#agenda h2');
-    const vencidos = itens.filter((c) => new Date(c.prazo) < agora).length;
-    if (h2) h2.innerHTML = `📅 Agenda ${vencidos ? '<b>(' + vencidos + ' vencido' + (vencidos > 1 ? 's' : '') + ')</b>' : ''}`;
-    el.querySelectorAll('button[data-c]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        try { await fila('agenda_cumprir', { id: btn.closest('[data-cid]').dataset.cid }); toast('OK ✔'); await carregarAgenda(); }
-        catch (e) { toast(e.message, true); }
-      }));
-  } catch (e) { el.innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
-}
 
-async function carregarFiscalizacao() {
-  const el = document.querySelector('#fiscalizacao-lista');
-  if (!el) return;
-  try {
-    const r = await fila('violacao_listar');
-    const itens = r.itens || [];
-    const cor = { alta: 'var(--verm)', media: 'var(--ambar)', baixa: 'var(--tx2)' };
-    el.innerHTML = itens.length ? itens.map((v) =>
-      `<div class="fila-item" data-vid="${v.id}" style="border-left:3px solid ${cor[v.gravidade]}">
-        <span style="color:${cor[v.gravidade]};font-size:12px;font-weight:700">${v.tipo.replace(/_/g, ' ')}</span>
-        <span>${esc(v.descricao)}</span>
-        <button data-v="resolver" title="Marcar como resolvida">✓ resolvi</button>
-      </div>`).join('') : '<div class="fila-item" style="color:var(--verde)">nenhuma violação aberta ✓</div>';
-    const h2 = document.querySelector('#fiscalizacao h2');
-    if (h2) h2.innerHTML = `🔍 Fiscalização ${itens.length ? '<b>(' + itens.length + ' aberta' + (itens.length > 1 ? 's' : '') + ')</b>' : ''}`;
-    el.querySelectorAll('button[data-v]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        try { await fila('violacao_resolver', { id: btn.closest('[data-vid]').dataset.vid }); toast('OK ✔'); await carregarFiscalizacao(); }
-        catch (e) { toast(e.message, true); }
-      }));
-  } catch (e) { el.innerHTML = '<div class="fila-item" style="color:var(--tx2)">' + esc(e.message) + '</div>'; }
-}
 
-document.querySelector('#varrer-agora').addEventListener('click', async () => {
-  try {
-    const r = await fila('varredura_criar');
-    toast(r.duplicada ? 'Já tem varredura na fila' : 'Varredura pedida ✔ — o vigia pega em até 15 min');
-    await carregarGarimpo();
-  } catch (e) { toast(e.message, true); }
-});
+document.querySelector('#varrer-agora').addEventListener('click', () => { location.hash = '#recepcao'; }); // entrega 4: a ação mora na Recepção
 
 // ---- IA (Edge Functions) ----
 function contextoDoPar(parId) {
@@ -598,7 +395,7 @@ async function carregar() {
       const tels = carteiras.flatMap((c) => [c.pessoa.telefone, c.pessoa.contato_privado]).filter(Boolean);
       if (tels.length) aplicarInteracoes(carteiras, (await fila('interacoes', { telefones: tels })).por_telefone || {});
     } catch (e) { console.warn('interacoes indisponivel:', e.message); }
-    renderAlertas(); renderTabela(); carregarInbox(); carregarGarimpo(); carregarAgenda(); carregarFiscalizacao(); carregarSaude(); // entrega 2: fila de envio virou a Redação
+    renderAlertas(); renderTabela(); // entrega 4: caixa/agenda/fiscalização/ordens/saúde viraram setores
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
@@ -705,14 +502,14 @@ let gavetaAberta = null; // pessoa.id com a gaveta de alvos aberta
 function mostrarAba(nome) {
   abaAtual = nome;
   const hoje = nome === 'hoje';
-  for (const sel of ['#alertas', '#inbox', '#fila-envio', '#agenda', '#fiscalizacao', '#garimpo']) {
+  for (const sel of ['#alertas']) {
     const el = document.querySelector(sel); if (el) el.hidden = !hoje;
   }
   $('#tabela').hidden = hoje;
   document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
 }
 // Entrega 1: roteamento por setor (hash). #carteira = conteúdo anterior, intacto.
-const SETORES_TELA = { painel, redacao, expedicao, auditoria };
+const SETORES_TELA = { painel, recepcao, redacao, expedicao, cobranca, garimpo, fiscalizacao, auditoria };
 async function rotear() {
   const hash = location.hash || '#painel';
   const [rota, arg] = hash.slice(1).split('/');
@@ -728,24 +525,8 @@ async function rotear() {
 window.addEventListener('hashchange', rotear);
 document.querySelectorAll('#abas button').forEach((b) =>
   b.addEventListener('click', () => mostrarAba(b.dataset.aba)));
-$('#ia-fechar').addEventListener('click', () => { inboxRespondendo = null; $('#ia-dialog').close(); });
+$('#ia-fechar').addEventListener('click', () => { $('#ia-dialog').close(); });
 $('#ia-fila').addEventListener('click', async () => {
-  // resposta vinda da Caixa de entrada: destino já conhecido, sem prompts
-  if (inboxRespondendo) {
-    const item = inboxRespondendo;
-    try {
-      await fila('criar', {
-        canal: item.canal || 'olx', destino: item.destino,
-        destino_rotulo: item.remetente + (item.anuncio ? ' (' + item.anuncio.slice(0, 40) + ')' : ''),
-        texto: $('#ia-texto').value, origem: 'inbox',
-      });
-      await fila('inbox_marcar', { id: item.id, estado: 'respondida' });
-      inboxRespondendo = null;
-      $('#ia-dialog').close(); toast('Na fila ✔ (pendente de aprovação)');
-      await carregarFilaEnvio(); await carregarInbox();
-    } catch (e) { toast(e.message, true); }
-    return;
-  }
   if (!ultimoRascunho) return;
   const c = carteiras.flatMap((x) => x.pares.map((p) => ({ pessoa: x.pessoa, ...p })))
     .find((x) => x.par.id === ultimoRascunho.parId);
@@ -760,7 +541,7 @@ $('#ia-fila').addEventListener('click', async () => {
   if (!destino) return;
   try {
     await fila('criar', { canal, destino, destino_rotulo: c ? (c.par.apelido || c.pessoa.nome_exibicao) : '', par_id: ultimoRascunho.parId, texto: $('#ia-texto').value, origem: 'ia' });
-    $('#ia-dialog').close(); toast('Na fila ✔ (pendente de aprovação)'); await carregarFilaEnvio();
+    $('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação');
   } catch (e) { toast(e.message, true); }
 });
 $('#ia-copiar').addEventListener('click', async () => {

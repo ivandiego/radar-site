@@ -25,33 +25,31 @@
   <header>
     <h1>RADAR<span class="marca">WELICI</span></h1>
     <span id="atualizado"></span>
-    <button id="novo-cliente" title="Cadastrar cliente">＋</button>
-    <button id="varrer-agora" title="Varrer OLX e WhatsApp agora">📡</button>
-    <button id="resumo-dia" title="Resumo do dia">🧠</button>
-    <button id="recarregar" title="Recarregar">↻</button>
-    <button id="sair" title="Sair">⎋</button>
+    <button id="novo-cliente" title="Cadastrar cliente">＋ Nova pessoa</button>
+    <button id="varrer-agora" title="Varrer OLX e WhatsApp agora (Recepção)">📡 Varrer agora</button>
+    <button id="resumo-dia" title="Resumo do dia">🧠 Resumo do dia</button>
+    <button id="recarregar" title="Recarregar">↻ Atualizar</button>
+    <button id="sair" title="Sair">⎋ Sair</button>
   </header>
 
   <div id="corpo">
     <nav id="setores" aria-label="Setores">
       <a href="#painel">Painel</a>
-      <a href="#diario/recepcao">Recepção</a>
+      <a href="#recepcao">Recepção</a>
       <a href="#redacao">Redação</a>
       <a href="#expedicao">Expedição</a>
-      <a href="#diario/cobranca">Cobrança</a>
-      <a href="#diario/garimpo">Garimpo</a>
-      <a href="#diario/fiscalizacao">Fiscalização</a>
+      <a href="#cobranca">Cobrança</a>
+      <a href="#garimpo">Garimpo</a>
+      <a href="#fiscalizacao">Fiscalização</a>
       <a href="#auditoria">Auditoria</a>
       <a href="#carteira">Carteira</a>
     </nav>
     <section id="setor"></section>
     <section id="carteira-legado" hidden>
       <!-- conteúdo anterior (abas VIPs/Hoje), intacto até as entregas 2-5 -->
-  <section id="saude"></section>
-
   <nav id="abas">
     <button data-aba="vips" class="ativa">VIPs</button>
-    <button data-aba="hoje">Hoje <span id="badge-hoje" class="badge" hidden></span></button>
+    <button data-aba="hoje">Hoje</button>
   </nav>
 
   <!-- Aba VIPs -->
@@ -59,22 +57,6 @@
 
   <!-- Aba Hoje -->
   <section id="alertas" hidden></section>
-  <section id="inbox" hidden>
-    <h2>Caixa de entrada</h2>
-    <div id="inbox-lista"></div>
-  </section>
-  <section id="agenda" hidden>
-    <h2>📅 Agenda</h2>
-    <div id="agenda-lista"></div>
-  </section>
-  <section id="fiscalizacao" hidden>
-    <h2>🔍 Fiscalização</h2>
-    <div id="fiscalizacao-lista"></div>
-  </section>
-  <section id="garimpo" hidden>
-    <h2>Ordens</h2>
-    <div id="garimpo-lista"></div>
-  </section>
     </section>
   </div>
 </main>

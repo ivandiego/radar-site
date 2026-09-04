@@ -198,3 +198,17 @@ table.diario td.hora { white-space: nowrap; color: var(--tx2); }
 .conversa-aud .motivos { color: var(--amarelo); margin: 6px 0; }
 table.aud { width: 100%; border-collapse: collapse; margin-top: 6px; } table.aud th, table.aud td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
 table.aud tr.ruim td { color: var(--verm); }
+
+/* Entrega 4: telas de setor */
+.faixa-setor.atencao { border-left: 4px solid var(--amarelo); padding-left: 10px; }
+.faixa-setor.parado { border-left: 4px solid var(--verm); padding-left: 10px; }
+.faixa-setor .travado { color: var(--verm); }
+.acoes-setor { display: flex; gap: 10px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+button.urgente { border-color: var(--verm); color: var(--verm); }
+table.chegadas { width: 100%; border-collapse: collapse; } table.chegadas th, table.chegadas td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+table.chegadas tr.nova td { font-weight: 600; }
+.promessas li, ul.regua li, ul.ordens li, ul.novos li, li.viol { list-style: none; padding: 6px 8px; border-bottom: 1px solid var(--linha); }
+li.vencida { border-left: 3px solid var(--verm); }
+li.viol.alta { border-left: 3px solid var(--verm); } li.viol.media { border-left: 3px solid var(--ambar); } li.viol.baixa { border-left: 3px solid var(--tx2); }
+.promessas .acoes, li.viol .acoes { display: flex; gap: 8px; margin-top: 4px; align-items: center; }
+header button { font-size: 13px; }

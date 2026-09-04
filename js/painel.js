@@ -46,3 +46,10 @@ export function alarmesDoPainel(payload, tz = 'UTC') {
     hora: a.hora ? hhmm(a.hora, tz) : '', texto: String(a.texto || ''), prova_ref: a.prova_ref || null, motivo: a.motivo || '',
   }));
 }
+
+// Entrega 4: faixa comum das telas de setor (spec §2) — o mesmo cartão do Painel, num setor só.
+export function faixaDoSetor(payload, setor, tz = 'UTC') {
+  const c = cartoesDoPainel(payload || {}, tz).find((x) => x.setor === setor);
+  const alarmes = ((payload && payload.alarmes) || []).filter((a) => a.setor === setor).length;
+  return { titulo: c.titulo, quem: c.quem, rodada: c.rodada, fez: c.fez, travado: c.travado, alarmes, estado: c.estado };
+}
