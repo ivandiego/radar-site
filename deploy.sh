@@ -6,12 +6,12 @@ cd "$(dirname "$0")"
 V=$(date +%s)
 sed -i '' -E "s|(js/app\.js)(\?v=[0-9]*)?|\1?v=$V|" index.html
 sed -i '' -E "s|(style\.css)(\?v=[0-9]*)?|\1?v=$V|" index.html
-sed -i '' -E 's|from '"'"'\./(logic\|api\|config)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
+sed -i '' -E 's|from '"'"'\./(logic\|api\|config\|setores/painel\|setores/diario)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
 sed -i '' -E 's|from '"'"'\./(config\|registro\|carteira)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/api.js
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 # gates (PR 3 da revisão): sintaxe de TODO js + unit + E2E Playwright real —
 # um SyntaxError em app.js derrubava o painel inteiro e o deploy não via
-for f in js/*.js; do node --check "$f"; done
+for f in js/*.js js/setores/*.js; do node --check "$f"; done
 # F6: identificador indefinido (bug de 03/09: import esquecido virou ReferenceError em prod)
 npx --yes eslint@9 js/ || { echo "ESLINT FALHOU - abortado"; exit 1; }
 # F6: unit + gate de cobertura (>=80% linhas nos módulos puros)

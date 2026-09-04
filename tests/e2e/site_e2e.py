@@ -72,6 +72,15 @@ FILA = {
     "garimpo_listar": {"itens": []},
     "saude": {"heartbeats": [{"chave": "carteiro", "atualizado_em": "2100-01-01T00:00:00Z", "detalhe": "ok"}], "ordens_abertas": []},
     "aprovar": {"item": {"id": "f1", "estado": "aprovada"}},
+    "painel": {"setores": {
+        "recepcao": {"ultima_rodada": "2026-09-03T22:00:00Z", "fez": [{"tipo": "chat_lido", "n": 37}], "travado": ["WhatsApp deslogado (QR) desde 21:59"]},
+        "redacao": {"ultima_rodada": "2026-09-03T22:02:00Z", "fez": [{"tipo": "rascunho_decisao", "n": 6}], "travado": []},
+        "expedicao": {"ultima_rodada": None, "fez": [], "travado": []}, "cobranca": {"ultima_rodada": None, "fez": [], "travado": []},
+        "garimpo": {"ultima_rodada": None, "fez": [], "travado": []}, "fiscalizacao": {"ultima_rodada": None, "fez": [], "travado": []}},
+        "nao_acontecendo": [{"tipo": "cliente_sem_resposta", "texto": "Nani sem resposta há 3h", "setor": "redacao", "ref": "mensagem_recebida:r1"}]},
+    "diario_listar": {"itens": [{"setor": "recepcao", "tipo": "chat_lido", "hora": "2026-09-03T22:00:10Z", "quem": "Nani",
+                                 "texto": "Nani: dele(a): Bom dia 200 mil", "prova_ref": "chat_varrido:5513997790904"}]},
+    "prova": {"tabela": "chat_varrido", "item": {"chave": "5513997790904", "rotulo": "Nani", "ultima_msg_vista": "dele(a): Bom dia 200 mil", "varrido_em": "2026-09-03T22:00:00Z"}},
     # F9: frescura derivada da caixa — Mesach falou "agora" pela caixa, não pelo campo do site
     "interacoes": {"por_telefone": {"49564957": {"ultima_recebida": "2100-01-01T00:00:00Z", "ultima_enviada": None, "ultima_palavra": "deles", "texto": "Posso te ligar?"}}},
 }
@@ -101,7 +110,7 @@ def main():
             route.fulfill(content_type="application/json", body=json.dumps(FILA.get(acao, {"itens": []})))
         page.route("**/functions/v1/fila", fila_stub)
 
-        page.goto(base + "/index.html")
+        page.goto(base + "/index.html#carteira")
         page.wait_for_selector("#painel:not([hidden])", timeout=8000)
 
         ok = lambda cond, msg: print(f"ok {msg}") if cond else (erros.append(f"ASSERT: {msg}"), print(f"FALHA {msg}"))
@@ -135,6 +144,24 @@ def main():
         page.wait_for_timeout(800)
         ok(page.inner_text("#toast").strip() == "Registrado ✔",
            f"botão Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
+
+        # Entrega 1: Painel por setores com evidências + Diário com "Abrir prova"
+        page.click('#setores a[href="#painel"]')
+        page.wait_for_selector('#setor .cartao-setor')
+        ok(page.locator('#setor .cartao-setor').count() == 6, "painel: 6 cartões, um por setor")
+        ok("37 chats lidos" in page.inner_text('#setor'), "painel: 'fez' em português")
+        ok("WhatsApp deslogado" in page.inner_text('#setor'), "painel: travado aparece no cartão")
+        ok("Nani sem resposta" in page.inner_text('#setor'), "painel: 'não está acontecendo' listado")
+        page.click('#setor .cartao-setor[data-setor="recepcao"] a.ver-diario')
+        page.wait_for_selector('#setor table.diario tr.linha')
+        ok("Bom dia 200 mil" in page.inner_text('#setor table.diario'), "diário: texto real da ação")
+        page.click('#setor table.diario tr.linha button.abrir-prova')
+        page.wait_for_timeout(400)
+        ok("prova" in acoes_fila and "varrido" in page.inner_text('#ia-dialog').lower(), "diário: Abrir prova busca a prova e mostra no diálogo")
+        page.click('#ia-fechar')
+        page.click('#setores a[href="#carteira"]')
+        page.wait_for_selector('#tabela-vips tr.vip-row')
+        ok("Mesach" in page.inner_text('#tabela-vips'), "carteira: a tabela antiga continua funcionando")
 
     srv.shutdown()
     if erros:

@@ -1,6 +1,8 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788486235';
 import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788486235';
 import { FUNCTIONS_URL } from './config.js?v=1788486235';
+import * as painel from './setores/painel.js?v=1788486235';
+import * as diario from './setores/diario.js?v=1788486235';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -606,7 +608,7 @@ async function boot() {
   const s = await sessao();
   $('#login').hidden = !!s;
   $('#painel').hidden = !s;
-  if (s) carregar();
+  if (s) { carregar(); rotear(); }
 }
 
 $('#form-login').addEventListener('submit', async (ev) => {
@@ -706,9 +708,23 @@ function mostrarAba(nome) {
   $('#tabela').hidden = hoje;
   document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
 }
+// Entrega 1: roteamento por setor (hash). #carteira = conteúdo anterior, intacto.
+const SETORES_TELA = { painel };
+async function rotear() {
+  const hash = location.hash || '#painel';
+  const [rota, arg] = hash.slice(1).split('/');
+  document.querySelectorAll('#setores a').forEach((a) => a.classList.toggle('ativa', a.getAttribute('href') === hash));
+  const el = document.querySelector('#setor'); const legado = document.querySelector('#carteira-legado');
+  if (rota === 'carteira') { el.hidden = true; legado.hidden = false; mostrarAba(abaAtual); return; }
+  legado.hidden = true; el.hidden = false;
+  const mod = rota === 'diario' ? diario : (SETORES_TELA[rota] || painel);
+  if (rota === 'diario') diario.configurar(arg || 'recepcao');
+  el.innerHTML = '<p>carregando…</p>';
+  try { await mod.carregar(); mod.render(el); } catch (e) { el.innerHTML = `<p class="erro">${esc(e.message)}</p>`; }
+}
+window.addEventListener('hashchange', rotear);
 document.querySelectorAll('#abas button').forEach((b) =>
   b.addEventListener('click', () => mostrarAba(b.dataset.aba)));
-mostrarAba('vips');
 $('#ia-fechar').addEventListener('click', () => { inboxRespondendo = null; $('#ia-dialog').close(); });
 $('#ia-fila').addEventListener('click', async () => {
   // resposta vinda da Caixa de entrada: destino já conhecido, sem prompts
