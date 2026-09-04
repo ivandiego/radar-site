@@ -1,11 +1,11 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788523835';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788523835';
-import { FUNCTIONS_URL } from './config.js?v=1788523835';
-import * as painel from './setores/painel.js?v=1788523835';
-import * as diario from './setores/diario.js?v=1788523835';
-import * as redacao from './setores/redacao.js?v=1788523835';
-import * as expedicao from './setores/expedicao.js?v=1788523835';
-import * as auditoria from './setores/auditoria.js?v=1788523835';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788525022';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788525022';
+import { FUNCTIONS_URL } from './config.js?v=1788525022';
+import * as painel from './setores/painel.js?v=1788525022';
+import * as diario from './setores/diario.js?v=1788525022';
+import * as redacao from './setores/redacao.js?v=1788525022';
+import * as expedicao from './setores/expedicao.js?v=1788525022';
+import * as auditoria from './setores/auditoria.js?v=1788525022';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
