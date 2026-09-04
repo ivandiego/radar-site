@@ -1,18 +1,18 @@
 // app.js (entrega 5): sessão, cabeçalho, diálogos comuns e roteamento por setor.
 // Toda tela mora em js/setores/<setor>.js ({configurar?, carregar, render}); a lógica pura em módulos testados.
-import { sessao, login, logout, fetchCarteira } from './api.js?v=1788530695';
-import { diasDesde, filaDoDia, esc } from './logic.js?v=1788530695';
-import { toast, abrirDialogo, invocar } from './ui.js?v=1788530695';
-import * as painel from './setores/painel.js?v=1788530695';
-import * as diario from './setores/diario.js?v=1788530695';
-import * as redacao from './setores/redacao.js?v=1788530695';
-import * as expedicao from './setores/expedicao.js?v=1788530695';
-import * as auditoria from './setores/auditoria.js?v=1788530695';
-import * as recepcao from './setores/recepcao.js?v=1788530695';
-import * as cobranca from './setores/cobranca.js?v=1788530695';
-import * as garimpo from './setores/garimpo.js?v=1788530695';
-import * as fiscalizacao from './setores/fiscalizacao.js?v=1788530695';
-import * as carteira from './setores/carteira.js?v=1788530695';
+import { sessao, login, logout, fetchCarteira } from './api.js?v=1788532308';
+import { diasDesde, filaDoDia, esc } from './logic.js?v=1788532308';
+import { toast, abrirDialogo, invocar } from './ui.js?v=1788532308';
+import * as painel from './setores/painel.js?v=1788532308';
+import * as diario from './setores/diario.js?v=1788532308';
+import * as redacao from './setores/redacao.js?v=1788532308';
+import * as expedicao from './setores/expedicao.js?v=1788532308';
+import * as auditoria from './setores/auditoria.js?v=1788532308';
+import * as recepcao from './setores/recepcao.js?v=1788532308';
+import * as cobranca from './setores/cobranca.js?v=1788532308';
+import * as garimpo from './setores/garimpo.js?v=1788532308';
+import * as fiscalizacao from './setores/fiscalizacao.js?v=1788532308';
+import * as carteira from './setores/carteira.js?v=1788532308';
 
 const $ = (s) => document.querySelector(s);
 
