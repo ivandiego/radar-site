@@ -15,7 +15,7 @@ for f in js/*.js js/setores/*.js; do node --check "$f"; done
 # F6: identificador indefinido (bug de 03/09: import esquecido virou ReferenceError em prod)
 npx --yes eslint@9 js/ || { echo "ESLINT FALHOU - abortado"; exit 1; }
 # F6: unit + gate de cobertura (>=80% linhas nos módulos puros)
-node --test --experimental-test-coverage --test-coverage-include='js/logic.js' --test-coverage-include='js/registro.js' --test-coverage-include='js/carteira.js' --test-coverage-include='js/painel.js' --test-coverage-include='js/redacao.js' --test-coverage-include='js/auditoria.js' --test-coverage-lines=80 tests/*.test.mjs > /dev/null 2>&1 || { echo "TESTES/COBERTURA FALHARAM - abortado"; exit 1; }
+node --test --experimental-test-coverage --test-coverage-include='js/logic.js' --test-coverage-include='js/registro.js' --test-coverage-include='js/carteira.js' --test-coverage-include='js/painel.js' --test-coverage-include='js/redacao.js' --test-coverage-include='js/auditoria.js' --test-coverage-include='js/recepcao.js' --test-coverage-include='js/cobranca.js' --test-coverage-include='js/garimpo.js' --test-coverage-include='js/fiscalizacao.js' --test-coverage-lines=80 tests/*.test.mjs > /dev/null 2>&1 || { echo "TESTES/COBERTURA FALHARAM - abortado"; exit 1; }
 python3 tests/e2e/site_e2e.py > /tmp/site-e2e.log 2>&1 || { echo "E2E FALHOU - abortado"; tail -8 /tmp/site-e2e.log; exit 1; }
 git add index.html js/ && git commit -q -m "${1:-chore: deploy} (v=$V)" && git push -q
 echo "publicado v=$V"

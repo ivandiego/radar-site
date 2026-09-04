@@ -149,11 +149,12 @@ def main():
         page.wait_for_selector("#tabela-vips tr.vip-row", timeout=5000)
         ok("Mesach" in page.inner_text("#tabela-vips"), "tabela VIPs renderiza a pessoa")
         ok("1/3" in page.inner_text("#tabela-vips"), "chip de alvos calculado (1/3)")
-        ok("Carteiro" in page.inner_text("#saude"), "painel de saude renderiza heartbeat")
+        ok(all(page.locator(f"#carteira-legado {sel}").count() == 0 for sel in ["#inbox", "#agenda", "#fiscalizacao", "#garimpo", "#saude"]), "entrega 4: caixa/agenda/fiscalização/ordens/saúde saíram do legado")
+        ok("Varrer agora" in page.inner_text("header") and "Nova pessoa" in page.inner_text("header"), "entrega 4: cabeçalho com botões em texto")
         ok("interacoes" in acoes_fila and "dele(a)" in page.inner_text("#tabela-vips"), "F9: ultima interacao vem da caixa (interacoes) e mostra a ultima palavra")
 
         page.click('#abas button[data-aba="hoje"]')
-        page.wait_for_selector("#inbox:not([hidden])")
+        page.wait_for_selector("#alertas:not([hidden])")
         ok(page.locator('#carteira-legado #fila-envio').count() == 0, "entrega 2: a fila de envio (✔) saiu da aba Hoje")
 
         page.click('#abas button[data-aba="vips"]')
