@@ -1,8 +1,8 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788486235';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788486235';
-import { FUNCTIONS_URL } from './config.js?v=1788486235';
-import * as painel from './setores/painel.js?v=1788486235';
-import * as diario from './setores/diario.js?v=1788486235';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788490515';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788490515';
+import { FUNCTIONS_URL } from './config.js?v=1788490515';
+import * as painel from './setores/painel.js?v=1788490515';
+import * as diario from './setores/diario.js?v=1788490515';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
