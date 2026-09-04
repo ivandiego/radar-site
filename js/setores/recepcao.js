@@ -4,15 +4,13 @@ import { fila } from '../api.js';
 import { esc } from '../logic.js';
 import { faixaDoSetor } from '../painel.js';
 import { chegadasDaRecepcao } from '../recepcao.js';
+import { faixa } from './faixa.js';
 
 let dados = null, painel = null;
 export async function carregar() { [dados, painel] = await Promise.all([fila('recepcao_listar'), fila('painel')]); }
 const QR = `1. No Mac do robô, traga pra frente a janela do Chrome do robô (perfil "chrome-robo", porta 9222).
 2. Na aba web.whatsapp.com, escaneie o QR com o WhatsApp do celular (Dispositivos conectados → Conectar um dispositivo).
 3. Quando a lista de conversas aparecer, volte aqui e clique em Varrer agora.`;
-export function faixa(f, setor) {
-  return `<div class="faixa-setor ${f.estado}"><h2>${esc(f.titulo)}</h2><span>${esc(f.quem)}</span><span>${f.rodada ? `última rodada às <b>${f.rodada}</b>` : 'sem rodada nas últimas 24h'}</span><span>${esc(f.fez)}</span>${f.travado.map((t) => `<span class="travado">travado: ${esc(t)}</span>`).join('')}<a class="ver-diario" href="#diario/${setor}">Ver o diário</a></div>`;
-}
 export function render(el) {
   const f = faixaDoSetor(painel || {}, 'recepcao', 'America/Sao_Paulo');
   const { itens, resumo, ordens } = chegadasDaRecepcao(dados || {}, 'America/Sao_Paulo');

@@ -7,6 +7,7 @@ import * as redacao from './setores/redacao.js?v=1788525022';
 import * as expedicao from './setores/expedicao.js?v=1788525022';
 import * as auditoria from './setores/auditoria.js?v=1788525022';
 import * as recepcao from './setores/recepcao.js?v=1788525022';
+import * as cobranca from './setores/cobranca.js?v=1788525022';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -710,7 +711,7 @@ function mostrarAba(nome) {
   document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
 }
 // Entrega 1: roteamento por setor (hash). #carteira = conteúdo anterior, intacto.
-const SETORES_TELA = { painel, recepcao, redacao, expedicao, auditoria };
+const SETORES_TELA = { painel, recepcao, redacao, expedicao, cobranca, auditoria };
 async function rotear() {
   const hash = location.hash || '#painel';
   const [rota, arg] = hash.slice(1).split('/');

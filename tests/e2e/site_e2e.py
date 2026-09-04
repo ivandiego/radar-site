@@ -72,6 +72,10 @@ FILA = {
     "recepcao_listar": {"chegadas": [{"id": "m1", "canal": "whatsapp", "remetente": "Mesach", "destino": "5511949564957", "texto": "Posso te ligar?", "hora_olx": "09:27, 9/3/2026", "criado_em": "2026-09-03T12:28:00Z", "estado": "nova"}], "enviadas": [], "ordens": []},
     "varredura_criar": {"item": {"id": "v1", "estado": "pendente"}},
     "inbox_marcar": {"item": {"id": "m1", "estado": "ignorada"}},
+    "cobranca_listar": {"agenda": [{"id": "c2", "rotulo": "Paula", "o_que": "retornar com a proposta", "prazo": "2026-09-03T15:00:00Z", "quem_deve": "nos", "destino": "1401234567"}, {"id": "c1", "rotulo": "Mesach", "o_que": "mandar as fotos", "prazo": "2100-01-01T15:00:00Z", "quem_deve": "deles", "destino": "5511949564957"}], "diario": []},
+    "agenda_cumprir": {"item": {"id": "c2"}},
+    "agenda_renegociar": {"item": {"id": "c9"}},
+    "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
     "garimpo_listar": {"itens": []},
@@ -179,6 +183,22 @@ def main():
         page.click('#setor tr[data-mid="m1"] button.ignorar')
         page.wait_for_timeout(300)
         ok("inbox_marcar" in acoes_fila, "recepção: Ignorar dispara inbox_marcar")
+
+        # Entrega 4: Cobrança — promessas nossas/deles, Cumprida, Renegociar, Lembrar agora
+        page.click('#setores a[href="#cobranca"]')
+        page.wait_for_selector('#setor .promessas.nossas li[data-cid]')
+        ok("vencida há" in page.inner_text('#setor .promessas.nossas'), "cobrança: promessa nossa vencida com atraso")
+        page.once("dialog", lambda d: d.accept("2026-12-01"))
+        page.click('#setor .promessas.nossas li[data-cid="c2"] button.renegociar')
+        page.wait_for_timeout(300)
+        ok("agenda_renegociar" in acoes_fila, "cobrança: Renegociar pede prazo e dispara agenda_renegociar")
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor .promessas.deles li[data-cid="c1"] button.lembrar')
+        page.wait_for_timeout(300)
+        ok("agenda_lembrar" in acoes_fila, "cobrança: Lembrar agora dispara agenda_lembrar")
+        page.click('#setor .promessas.deles li[data-cid="c1"] button.cumprida')
+        page.wait_for_timeout(300)
+        ok("agenda_cumprir" in acoes_fila, "cobrança: Cumprida dispara agenda_cumprir")
 
         # Entrega 3: Auditoria por VIP — árvore, selos, 4 colunas, Conferir agora, Amostra
         page.click('#setores a[href="#auditoria"]')
