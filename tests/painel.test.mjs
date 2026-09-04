@@ -36,3 +36,20 @@ test('naoAcontecendo: repassa com rótulo do setor', () => {
   const n = naoAcontecendo(payload);
   assert.equal(n[0].setorTitulo, 'Redação'); assert.equal(n[0].ref, 'mensagem_recebida:r1');
 });
+
+// ---- PR 2 (04/09): alarmes no topo do Painel ----
+import { alarmesDoPainel } from '../js/painel.js';
+test('alarmesDoPainel: alarmes com rótulo do setor, hora curta e texto; vazio → []', () => {
+  const a = alarmesDoPainel({ alarmes: [
+    { id: 'a2', setor: 'expedicao', hora: '2026-09-04T02:00:00Z', texto: 'envio_falhou: Lilis — deslogado', prova_ref: 'mensagem_fila:f3', motivo: 'envio_falhou' },
+    { id: 'a1', setor: 'recepcao', hora: '2026-09-04T01:00:00Z', texto: 'lacuna: possível perda no chat da Lilis', prova_ref: 'chat_varrido:5513', motivo: 'lacuna' },
+  ] });
+  assert.equal(a.length, 2);
+  assert.equal(a[0].setorTitulo, 'Expedição'); assert.equal(a[0].hora, '02:00'); assert.equal(a[0].id, 'a2');
+  assert.equal(a[1].texto, 'lacuna: possível perda no chat da Lilis');
+  assert.deepEqual(alarmesDoPainel({}), []);
+});
+test('cartoesDoPainel: setor com alarme aberto fica em atenção mesmo sem travado', () => {
+  const p = { setores: { recepcao: { ultima_rodada: '2026-09-03T22:00:00Z', fez: [], travado: [] } }, alarmes: [{ id: 'a1', setor: 'recepcao', hora: '2026-09-04T01:00:00Z', texto: 'lacuna: x', motivo: 'lacuna' }] };
+  assert.equal(cartoesDoPainel(p)[0].estado, 'atencao');
+});
