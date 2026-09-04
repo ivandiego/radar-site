@@ -22,6 +22,9 @@ FIX = {
         "classificacao": "vip", "valor_do_que_tem": 350000, "diferenca_max": 100000,
         "gargalo": "esperando cliente ver fotos", "ultima_interacao": None,
         "criterios": "", "o_que_busca": "casa maior", "promessa_pendente": False, "telefone": "(11) 94956-4957",
+    }, {
+        "id": "v2", "nome_exibicao": "Vip Mudo", "estagio": "3-RESPONDEU", "classificacao": "vip", "valor_do_que_tem": 300000,
+        "diferenca_max": 50000, "ultima_interacao": "2026-08-01T00:00:00Z", "criterios": "", "telefone": None, "promessa_pendente": False, "gargalo": "",
     }],
     "par_lado": [
         {"par_id": "p1", "pessoa_id": "m1", "imovel_id": None},
@@ -276,6 +279,7 @@ def main():
         ok(acoes_fila.count("conferir_vip") >= 2, "auditoria: Amostra de 5 dispara conferir_vip")
         page.click('#setores a[href="#painel"]')
         page.wait_for_selector('#setor .cartao-setor')
+        ok("Vip Mudo" in page.inner_text('#setor .nao-acontecendo') and 'href="#carteira/v2"' in page.inner_html('#setor .nao-acontecendo'), "painel: VIP mudo 5+ dias com link pra ficha")
         ok(page.locator('#setor .cartao-setor').count() == 6, "painel: 6 cartões, um por setor")
         ok("37 chats lidos" in page.inner_text('#setor'), "painel: 'fez' em português")
         ok("WhatsApp deslogado" in page.inner_text('#setor'), "painel: travado aparece no cartão")
