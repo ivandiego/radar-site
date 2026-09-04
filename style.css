@@ -156,3 +156,22 @@ table.alvos button:hover { border-color: var(--ambar); }
 .negocio { font-size: 12px; color: var(--tx2); margin-top: 3px; white-space: nowrap; }
 .negocio b { font-weight: 700; }
 .alvos a.zap { text-decoration: none; font-size: 14px; margin-left: 4px; }
+
+/* Entrega 1: menu por setores, Painel, Diário */
+#corpo { display: grid; grid-template-columns: 180px 1fr; gap: 20px; }
+#setores { display: flex; flex-direction: column; gap: 4px; border-right: 2px solid var(--linha); padding-right: 12px; }
+#setores a { color: var(--tx2); text-decoration: none; padding: 8px 10px; border-radius: 6px; font-weight: 700; }
+#setores a.ativa { color: var(--tx); background: rgba(255,255,255,.06); }
+.faixa-setor { display: flex; gap: 16px; align-items: baseline; color: var(--tx2); margin-bottom: 14px; }
+.faixa-setor h2 { margin: 0; }
+.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.cartao-setor { border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; }
+.cartao-setor.ok { border-left: 4px solid var(--verde); }
+.cartao-setor.atencao { border-left: 4px solid var(--amarelo); }
+.cartao-setor.parado { border-left: 4px solid var(--verm); }
+.cartao-setor .travado { color: var(--verm); margin-top: 6px; }
+.nao-acontecendo { margin-top: 20px; } .nao-acontecendo li { margin: 6px 0; }
+table.diario { width: 100%; border-collapse: collapse; }
+table.diario td { padding: 6px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+table.diario td.hora { white-space: nowrap; color: var(--tx2); }
+@media (max-width: 720px) { #corpo { grid-template-columns: 1fr; } #setores { flex-direction: row; flex-wrap: wrap; border-right: 0; } }
