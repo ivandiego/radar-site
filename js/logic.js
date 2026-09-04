@@ -159,3 +159,11 @@ export function aplicarInteracoes(carteiras, porTelefone = {}) {
   }
   return carteiras;
 }
+
+// Entrega 4: um payload só pra "Garimpar alvos" (Carteira e Garimpo).
+export function payloadGarimpo(p) {
+  return {
+    pessoa_id: p.id, pessoa_nome: p.nome_exibicao, meta: metaAlvosDe(p),
+    criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
+  };
+}

@@ -1,5 +1,5 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788525022';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788525022';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes, payloadGarimpo } from './logic.js?v=1788525022';
 import { FUNCTIONS_URL } from './config.js?v=1788525022';
 import * as painel from './setores/painel.js?v=1788525022';
 import * as diario from './setores/diario.js?v=1788525022';
@@ -279,10 +279,7 @@ function renderTabela() {
       if (!c) return;
       const p = c.pessoa;
       try {
-        const r = await fila('garimpo_criar', {
-          pessoa_id: p.id, pessoa_nome: p.nome_exibicao, meta: metaAlvosDe(p),
-          criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
-        });
+        const r = await fila('garimpo_criar', payloadGarimpo(p)); // entrega 4: payload único (Carteira e Garimpo)
         toast(r.duplicada ? 'Já existe ordem aberta pra este VIP' : 'Ordem de garimpo criada ✔ — o robô executa');
         await carregarGarimpo();
       } catch (e) { toast(e.message, true); }
