@@ -21,7 +21,7 @@ FIX = {
         "id": "m1", "nome_exibicao": "Mesach — casa Suzano", "estagio": "3-RESPONDEU",
         "classificacao": "vip", "valor_do_que_tem": 350000, "diferenca_max": 100000,
         "gargalo": "esperando cliente ver fotos", "ultima_interacao": None,
-        "criterios": "", "o_que_busca": "casa maior", "promessa_pendente": False,
+        "criterios": "", "o_que_busca": "casa maior", "promessa_pendente": False, "telefone": "(11) 94956-4957",
     }],
     "par_lado": [
         {"par_id": "p1", "pessoa_id": "m1", "imovel_id": None},
@@ -72,6 +72,8 @@ FILA = {
     "garimpo_listar": {"itens": []},
     "saude": {"heartbeats": [{"chave": "carteiro", "atualizado_em": "2100-01-01T00:00:00Z", "detalhe": "ok"}], "ordens_abertas": []},
     "aprovar": {"item": {"id": "f1", "estado": "aprovada"}},
+    # F9: frescura derivada da caixa — Mesach falou "agora" pela caixa, não pelo campo do site
+    "interacoes": {"por_telefone": {"49564957": {"ultima_recebida": "2100-01-01T00:00:00Z", "ultima_enviada": None, "ultima_palavra": "deles", "texto": "Posso te ligar?"}}},
 }
 
 
@@ -109,6 +111,7 @@ def main():
         ok("Mesach" in page.inner_text("#tabela-vips"), "tabela VIPs renderiza a pessoa")
         ok("1/3" in page.inner_text("#tabela-vips"), "chip de alvos calculado (1/3)")
         ok("Carteiro" in page.inner_text("#saude"), "painel de saude renderiza heartbeat")
+        ok("interacoes" in acoes_fila and "dele(a)" in page.inner_text("#tabela-vips"), "F9: ultima interacao vem da caixa (interacoes) e mostra a ultima palavra")
 
         page.click('#abas button[data-aba="hoje"]')
         page.wait_for_selector("#fila-envio:not([hidden])")
