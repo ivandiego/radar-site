@@ -1,15 +1,15 @@
-import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788525022';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes, payloadGarimpo } from './logic.js?v=1788525022';
-import { FUNCTIONS_URL } from './config.js?v=1788525022';
-import * as painel from './setores/painel.js?v=1788525022';
-import * as diario from './setores/diario.js?v=1788525022';
-import * as redacao from './setores/redacao.js?v=1788525022';
-import * as expedicao from './setores/expedicao.js?v=1788525022';
-import * as auditoria from './setores/auditoria.js?v=1788525022';
-import * as recepcao from './setores/recepcao.js?v=1788525022';
-import * as cobranca from './setores/cobranca.js?v=1788525022';
-import * as garimpo from './setores/garimpo.js?v=1788525022';
-import * as fiscalizacao from './setores/fiscalizacao.js?v=1788525022';
+import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788530695';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes, payloadGarimpo } from './logic.js?v=1788530695';
+import { FUNCTIONS_URL } from './config.js?v=1788530695';
+import * as painel from './setores/painel.js?v=1788530695';
+import * as diario from './setores/diario.js?v=1788530695';
+import * as redacao from './setores/redacao.js?v=1788530695';
+import * as expedicao from './setores/expedicao.js?v=1788530695';
+import * as auditoria from './setores/auditoria.js?v=1788530695';
+import * as recepcao from './setores/recepcao.js?v=1788530695';
+import * as cobranca from './setores/cobranca.js?v=1788530695';
+import * as garimpo from './setores/garimpo.js?v=1788530695';
+import * as fiscalizacao from './setores/fiscalizacao.js?v=1788530695';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
