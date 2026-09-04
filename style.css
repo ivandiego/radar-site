@@ -175,3 +175,7 @@ table.diario { width: 100%; border-collapse: collapse; }
 table.diario td { padding: 6px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
 table.diario td.hora { white-space: nowrap; color: var(--tx2); }
 @media (max-width: 720px) { #corpo { grid-template-columns: 1fr; } #setores { flex-direction: row; flex-wrap: wrap; border-right: 0; } }
+
+.alarmes { border: 1px solid var(--verm); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+.alarmes h3 { margin: 0 0 8px; color: var(--verm); }
+.alarmes li { margin: 6px 0; } .alarmes button { margin-left: 8px; }

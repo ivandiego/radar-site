@@ -77,7 +77,9 @@ FILA = {
         "redacao": {"ultima_rodada": "2026-09-03T22:02:00Z", "fez": [{"tipo": "rascunho_decisao", "n": 6}], "travado": []},
         "expedicao": {"ultima_rodada": None, "fez": [], "travado": []}, "cobranca": {"ultima_rodada": None, "fez": [], "travado": []},
         "garimpo": {"ultima_rodada": None, "fez": [], "travado": []}, "fiscalizacao": {"ultima_rodada": None, "fez": [], "travado": []}},
-        "nao_acontecendo": [{"tipo": "cliente_sem_resposta", "texto": "Nani sem resposta há 3h", "setor": "redacao", "ref": "mensagem_recebida:r1"}]},
+        "nao_acontecendo": [{"tipo": "cliente_sem_resposta", "texto": "Nani sem resposta há 3h", "setor": "redacao", "ref": "mensagem_recebida:r1"}],
+        "alarmes": [{"id": "a1", "setor": "recepcao", "hora": "2026-09-04T01:00:00Z", "texto": "lacuna: possível perda no chat da Lilis", "prova_ref": "chat_varrido:5513997101500", "motivo": "lacuna"}]},
+    "alarme_resolver": {"item": {"id": "a1"}},
     "diario_listar": {"itens": [{"setor": "recepcao", "tipo": "chat_lido", "hora": "2026-09-03T22:00:10Z", "quem": "Nani",
                                  "texto": "Nani: dele(a): Bom dia 200 mil", "prova_ref": "chat_varrido:5513997790904"}]},
     "prova": {"tabela": "chat_varrido", "item": {"chave": "5513997790904", "rotulo": "Nani", "ultima_msg_vista": "dele(a): Bom dia 200 mil", "varrido_em": "2026-09-03T22:00:00Z"}},
@@ -152,6 +154,10 @@ def main():
         ok("37 chats lidos" in page.inner_text('#setor'), "painel: 'fez' em português")
         ok("WhatsApp deslogado" in page.inner_text('#setor'), "painel: travado aparece no cartão")
         ok("Nani sem resposta" in page.inner_text('#setor'), "painel: 'não está acontecendo' listado")
+        ok("Alarmes abertos (1)" in page.inner_text('#setor') and "possível perda" in page.inner_text('#setor'), "painel: alarme aberto em destaque")
+        page.click('#setor .alarmes button.resolver')
+        page.wait_for_timeout(500)
+        ok("alarme_resolver" in acoes_fila, "painel: Resolvido dispara alarme_resolver")
         page.click('#setor .cartao-setor[data-setor="recepcao"] a.ver-diario')
         page.wait_for_selector('#setor table.diario tr.linha')
         ok("Bom dia 200 mil" in page.inner_text('#setor table.diario'), "diário: texto real da ação")

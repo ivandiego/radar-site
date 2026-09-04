@@ -26,14 +26,23 @@ export function rotuloTipo(tipo, n = 2) {
 const hhmm = (iso, tz) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: tz });
 
 export function cartoesDoPainel(payload, tz = 'UTC') {
+  const comAlarme = new Set((payload.alarmes || []).map((a) => a.setor));
   return ORDEM.map((setor) => {
     const s = (payload.setores || {})[setor] || { ultima_rodada: null, fez: [], travado: [] };
     const fez = s.fez && s.fez.length ? s.fez.map((f) => `${f.n} ${rotuloTipo(f.tipo, f.n)}`).join(' · ') : 'nada registrado nas últimas 24h';
-    const estado = !s.ultima_rodada ? 'parado' : (s.travado && s.travado.length ? 'atencao' : 'ok');
+    const estado = !s.ultima_rodada ? 'parado' : ((s.travado && s.travado.length) || comAlarme.has(setor) ? 'atencao' : 'ok');
     return { setor, titulo: ROTULOS_SETOR[setor].titulo, quem: ROTULOS_SETOR[setor].quem, rodada: s.ultima_rodada ? hhmm(s.ultima_rodada, tz) : null, fez, travado: s.travado || [], estado };
   });
 }
 
 export function naoAcontecendo(payload) {
   return (payload.nao_acontecendo || []).map((x) => ({ ...x, setorTitulo: (ROTULOS_SETOR[x.setor] || {}).titulo || x.setor }));
+}
+
+// PR 2 (04/09): alarmes abertos (tipo 'alarme' do diário) — o topo do Painel, em vermelho.
+export function alarmesDoPainel(payload, tz = 'UTC') {
+  return (payload.alarmes || []).map((a) => ({
+    id: a.id, setor: a.setor, setorTitulo: (ROTULOS_SETOR[a.setor] || {}).titulo || a.setor,
+    hora: a.hora ? hhmm(a.hora, tz) : '', texto: String(a.texto || ''), prova_ref: a.prova_ref || null, motivo: a.motivo || '',
+  }));
 }
