@@ -78,6 +78,8 @@ FILA = {
     "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
+    "fiscalizacao_listar": {"abertas": [{"id": "v1", "tipo": "ignorada_suspeita", "gravidade": "alta", "referencia": "mensagem_recebida:m1", "descricao": "Mesach: Posso te ligar?", "criado_em": "2026-09-04T09:00:00Z"}], "resolvidas": []},
+    "violacao_resolver": {"item": {"id": "v1"}},
     "garimpo_listar": {"itens": [{"id": "g1", "estado": "pendente", "pessoa_nome": "Mesach", "meta": 3, "criado_em": "2026-09-04T11:00:00Z"}]},
     "garimpo_criar": {"item": {"id": "g9"}},
     "garimpo_marcar": {"item": {"id": "g1", "estado": "cancelada"}},
@@ -214,6 +216,14 @@ def main():
         page.click('#setor ul.ordens li[data-gid="g1"] button.cancelar')
         page.wait_for_timeout(300)
         ok("garimpo_marcar" in acoes_fila, "garimpo: Cancelar ordem dispara garimpo_marcar")
+
+        # Entrega 4: Fiscalização — violação com setor que resolve, Abrir prova, Resolvida
+        page.click('#setores a[href="#fiscalizacao"]')
+        page.wait_for_selector('#setor li.viol[data-vid="v1"]')
+        ok("ignorada suspeita" in page.inner_text('#setor') and 'href="#redacao"' in page.inner_html('#setor'), "fiscalização: violação aponta o setor que resolve")
+        page.click('#setor li.viol[data-vid="v1"] button.resolvida')
+        page.wait_for_timeout(300)
+        ok("violacao_resolver" in acoes_fila, "fiscalização: Resolvida dispara violacao_resolver")
 
         # Entrega 3: Auditoria por VIP — árvore, selos, 4 colunas, Conferir agora, Amostra
         page.click('#setores a[href="#auditoria"]')
