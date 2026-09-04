@@ -80,6 +80,16 @@ FILA = {
         "nao_acontecendo": [{"tipo": "cliente_sem_resposta", "texto": "Nani sem resposta há 3h", "setor": "redacao", "ref": "mensagem_recebida:r1"}],
         "alarmes": [{"id": "a1", "setor": "recepcao", "hora": "2026-09-04T01:00:00Z", "texto": "lacuna: possível perda no chat da Lilis", "prova_ref": "chat_varrido:5513997101500", "motivo": "lacuna"}]},
     "alarme_resolver": {"item": {"id": "a1"}},
+    "redacao_listar": {"grupos": [{"destino": "5513988444944", "rotulo": "EWS", "canal": "whatsapp",
+        "recebida": {"texto": "Ivan, o apartamento no Ipiranga é uma excelente opção", "hora": "2026-09-02T11:08:00Z"},
+        "rascunhos": [{"id": "f1", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:11:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": None},
+                      {"id": "f2", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:19:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": "f1"}]}]},
+    "aprovar_editado": {"item": {"id": "f1", "estado": "aprovada"}},
+    "rejeitar": {"item": {"id": "f2", "estado": "rejeitada"}},
+    "expedicao_listar": {"enviadas": [{"id": "e1", "destino_rotulo": "Vitor", "canal": "whatsapp", "texto": "Boa noite Vitor", "enviado_em": "2026-09-01T22:58:00Z", "prova_envio": "whats 22:58 trecho"}],
+                         "falhas": [{"id": "x1", "destino": "5513981780293", "destino_rotulo": "Maracanã", "canal": "whatsapp", "texto": "Oi, Ivan…", "erro": "WhatsApp Web nao reconhece", "criado_em": "2026-09-02T23:00:00Z"}]},
+    "tentar_de_novo": {"item": {"id": "x1", "estado": "aprovada"}},
+    "mandei_eu_mesmo": {"item": {"id": "x1", "estado": "enviada"}},
     "diario_listar": {"itens": [{"setor": "recepcao", "tipo": "chat_lido", "hora": "2026-09-03T22:00:10Z", "quem": "Nani",
                                  "texto": "Nani: dele(a): Bom dia 200 mil", "prova_ref": "chat_varrido:5513997790904"}]},
     "prova": {"tabela": "chat_varrido", "item": {"chave": "5513997790904", "rotulo": "Nani", "ultima_msg_vista": "dele(a): Bom dia 200 mil", "varrido_em": "2026-09-03T22:00:00Z"}},
@@ -125,13 +135,8 @@ def main():
         ok("interacoes" in acoes_fila and "dele(a)" in page.inner_text("#tabela-vips"), "F9: ultima interacao vem da caixa (interacoes) e mostra a ultima palavra")
 
         page.click('#abas button[data-aba="hoje"]')
-        page.wait_for_selector("#fila-envio:not([hidden])")
-        ok("Dona da Boa Vista" in page.inner_text("#fila-envio-lista"), "fila de envio mostra o pendente")
-        ok("1" == page.inner_text("#badge-hoje").strip(), "badge Hoje conta o pendente")
-
-        page.click('#fila-envio-lista button[data-f="aprovar"]')
-        page.wait_for_timeout(600)
-        ok("aprovar" in acoes_fila, "clique no ✔ dispara acao=aprovar na edge fn")
+        page.wait_for_selector("#inbox:not([hidden])")
+        ok(page.locator('#carteira-legado #fila-envio').count() == 0, "entrega 2: a fila de envio (✔) saiu da aba Hoje")
 
         page.click('#abas button[data-aba="vips"]')
         page.click("#tabela-vips tr.vip-row")
@@ -158,6 +163,29 @@ def main():
         page.click('#setor .alarmes button.resolver')
         page.wait_for_timeout(500)
         ok("alarme_resolver" in acoes_fila, "painel: Resolvido dispara alarme_resolver")
+
+        # Entrega 2: Redação (contexto + Aprovar/Editar e aprovar/Rejeitar) e Expedição
+        page.click('#setores a[href="#redacao"]')
+        page.wait_for_selector('#setor .grupo-redacao')
+        ok("apartamento no Ipiranga" in page.inner_text('#setor'), "redação: mostra o que o cliente disse")
+        ok("rascunhos iguais" in page.inner_text('#setor'), "redação: aviso de duplicata")
+        page.click('#setor .grupo-redacao li[data-fid="f1"] button.editar')
+        page.fill('#setor .grupo-redacao li[data-fid="f1"] textarea', 'Bom dia EWS, texto editado pelo dono')
+        page.click('#setor .grupo-redacao li[data-fid="f1"] button.aprovar-editado')
+        page.wait_for_timeout(400)
+        ok("aprovar_editado" in acoes_fila, "redação: Editar e aprovar dispara aprovar_editado")
+        page.once("dialog", lambda d: d.accept("duplicado"))
+        page.click('#setor .grupo-redacao li[data-fid="f2"] button.rejeitar')
+        page.wait_for_timeout(400)
+        ok("rejeitar" in acoes_fila, "redação: Rejeitar pede motivo e dispara rejeitar")
+        page.click('#setores a[href="#expedicao"]')
+        page.wait_for_selector('#setor .falhas li')
+        ok("whats 22:58 trecho" in page.inner_text('#setor') and "nao reconhece" in page.inner_text('#setor'), "expedição: prova da enviada e erro da falha")
+        page.click('#setor .falhas li button.tentar')
+        page.wait_for_timeout(300)
+        ok("tentar_de_novo" in acoes_fila, "expedição: Tentar de novo")
+        page.click('#setores a[href="#painel"]')
+        page.wait_for_selector('#setor .cartao-setor')
         page.click('#setor .cartao-setor[data-setor="recepcao"] a.ver-diario')
         page.wait_for_selector('#setor table.diario tr.linha')
         ok("Bom dia 200 mil" in page.inner_text('#setor table.diario'), "diário: texto real da ação")
