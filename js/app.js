@@ -1,5 +1,5 @@
 import { sessao, login, logout, fetchCarteira, registrarNoPar, fila, sb } from './api.js?v=1788466713';
-import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc } from './logic.js?v=1788466713';
+import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, metaAlvosDe, esc, aplicarInteracoes } from './logic.js?v=1788466713';
 import { FUNCTIONS_URL } from './config.js?v=1788466713';
 
 const $ = (s) => document.querySelector(s);
@@ -221,6 +221,7 @@ function renderTabela() {
     const meta = metaAlvosDe(pessoa);
     const clsAlvos = alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn';
     const clsInt = dInt === null ? '' : dInt >= 2 ? 'bad' : dInt >= 1 ? 'warn' : 'ok';
+    const dicaInt = pessoa.interacao ? `última palavra: ${pessoa.interacao.ultima_palavra === 'nos' ? 'nossa' : 'dele(a)'}${pessoa.interacao.texto ? ' — ' + pessoa.interacao.texto : ''}` : 'campo do site (sem registro na caixa)';
     const aberta = gavetaAberta === pessoa.id;
     const linha = `<tr class="vip-row ${aberta ? 'aberta' : ''} ${pessoa.promessa_pendente ? 'problema' : ''}" data-pessoa="${pessoa.id}">
       <td class="nome-cel">${aberta ? '▾ ' : '▸ '}${esc(pessoa.nome_exibicao)}${/^https:\/\/(www\.|sp\.)?olx\.com\.br\//.test(pessoa.link_thread_olx_privado || '') ? ` <a href="${esc(pessoa.link_thread_olx_privado)}" target="_blank" rel="noopener" title="Anúncio do cliente na OLX">↗</a>` : ''}</td>
@@ -229,7 +230,7 @@ function renderTabela() {
       <td class="num ${clsAlvos}">${alvos}/${meta}</td>
       <td class="num ok">${resp}</td>
       <td class="num ${mudos ? 'warn' : ''}">${mudos}</td>
-      <td class="num ${clsInt}">${dInt === null ? '—' : dInt + 'd'}</td>
+      <td class="num ${clsInt}" title="${esc(dicaInt)}">${dInt === null ? '—' : dInt + 'd'}${pessoa.interacao ? (pessoa.interacao.ultima_palavra === 'nos' ? ' <small>nós</small>' : ' <small>dele(a)</small>') : ''}</td>
       <td class="num">${dResp === null ? '—' : dResp + 'd'}</td>
       <td>${bola}</td>
       <td class="com">${fmtK(comissao)}</td>
@@ -587,6 +588,11 @@ async function carregar() {
   $('#atualizado').textContent = 'carregando…';
   try {
     carteiras = await fetchCarteira();
+    // F9: frescura vem da CAIXA (fonte da verdade da conversa), não do campo espelhado
+    try {
+      const tels = carteiras.flatMap((c) => [c.pessoa.telefone, c.pessoa.contato_privado]).filter(Boolean);
+      if (tels.length) aplicarInteracoes(carteiras, (await fila('interacoes', { telefones: tels })).por_telefone || {});
+    } catch (e) { console.warn('interacoes indisponivel:', e.message); }
     renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarAgenda(); carregarFiscalizacao(); carregarSaude();
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

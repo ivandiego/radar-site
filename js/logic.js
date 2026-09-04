@@ -135,3 +135,27 @@ export function filaDoDia(carteiras) {
     }))
     .sort((a, b) => b.comissao - a.comissao);
 }
+
+// F9 (03/09): "última interação" DERIVADA da caixa/fila (edge fn 'interacoes'),
+// por telefone. O campo pessoa.ultima_interacao só era escrito pelo espelho do
+// LLM e congelou em 27/08 quando o lote assumiu a caixa — o site mostrava
+// "8d sem cliente" pra quem tinha falado hoje (Nani, EWS, Mesach).
+export function chave8(tel) {
+  const d = String(tel ?? '').replace(/\D/g, '');
+  return d.length >= 8 ? d.slice(-8) : '';
+}
+
+export function aplicarInteracoes(carteiras, porTelefone = {}) {
+  for (const c of carteiras) {
+    const p = c.pessoa;
+    const k = chave8(p.telefone) || chave8(p.contato_privado);
+    const it = k && porTelefone[k];
+    if (!it) continue;
+    p.interacao = it;
+    // fica a string ORIGINAL da mais recente (não re-serializa: '…:00Z' ≠ '…:00.000Z')
+    const candidatos = [p.ultima_interacao, it.ultima_recebida, it.ultima_enviada].filter((x) => x && !Number.isNaN(new Date(x).getTime()));
+    if (candidatos.length) p.ultima_interacao = candidatos.reduce((a, b) => (new Date(b) > new Date(a) ? b : a));
+    if (it.ultima_recebida && (!p.ultima_resposta_em || new Date(it.ultima_recebida) > new Date(p.ultima_resposta_em))) p.ultima_resposta_em = it.ultima_recebida;
+  }
+  return carteiras;
+}

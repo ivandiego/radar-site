@@ -127,3 +127,28 @@ test('esc: escapa aspas duplas (atributo)', () => assert.ok(!esc('a"b').includes
 test('esc: escapa < > &', () => assert.equal(esc('<b>&'), '&lt;b&gt;&amp;'));
 test('esc: aspas simples viram entidade', () => assert.ok(!esc("a'b").includes("'")));
 test('esc: nulo vira vazio', () => assert.equal(esc(null), ''));
+
+// ---- F9 (03/09): "última interação" DERIVADA da caixa — o campo do site
+// congelou em 27/08 quando o espelho do LLM parou. A régua usa o mais recente.
+import { aplicarInteracoes, chave8 } from '../js/logic.js';
+test('chave8: últimos 8 dígitos do telefone', () => {
+  assert.equal(chave8('(13) 99779-0904'), '97790904');
+  assert.equal(chave8(null), '');
+});
+test('aplicarInteracoes: pessoa ganha ultima_interacao mais recente entre site e caixa', () => {
+  const p = { nome_exibicao: 'Nani', telefone: '(13) 99779-0904', ultima_interacao: '2026-08-27T02:46:00Z' };
+  const c = aplicarInteracoes([{ pessoa: p, pares: [] }], { '97790904': { ultima_recebida: '2026-09-03T12:27:00Z', ultima_enviada: '2026-09-03T02:57:00Z', ultima_palavra: 'deles', texto: 'Bom dia 200 mil' } });
+  assert.equal(c[0].pessoa.ultima_interacao, '2026-09-03T12:27:00Z');
+  assert.equal(c[0].pessoa.interacao.ultima_palavra, 'deles');
+});
+test('aplicarInteracoes: sem telefone ou sem registro → intacta', () => {
+  const p = { nome_exibicao: 'karen', telefone: null, ultima_interacao: '2026-08-27T03:55:00Z' };
+  const c = aplicarInteracoes([{ pessoa: p, pares: [] }], {});
+  assert.equal(c[0].pessoa.ultima_interacao, '2026-08-27T03:55:00Z');
+  assert.equal(c[0].pessoa.interacao, undefined);
+});
+test('aplicarInteracoes: caixa mais velha que o site não rebaixa', () => {
+  const p = { telefone: '11999990000', ultima_interacao: '2026-09-02T00:00:00Z' };
+  const c = aplicarInteracoes([{ pessoa: p, pares: [] }], { '99990000': { ultima_recebida: '2026-08-01T00:00:00Z', ultima_enviada: null, ultima_palavra: 'deles' } });
+  assert.equal(c[0].pessoa.ultima_interacao, '2026-09-02T00:00:00Z');
+});
