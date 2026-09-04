@@ -78,7 +78,9 @@ FILA = {
     "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
-    "garimpo_listar": {"itens": []},
+    "garimpo_listar": {"itens": [{"id": "g1", "estado": "pendente", "pessoa_nome": "Mesach", "meta": 3, "criado_em": "2026-09-04T11:00:00Z"}]},
+    "garimpo_criar": {"item": {"id": "g9"}},
+    "garimpo_marcar": {"item": {"id": "g1", "estado": "cancelada"}},
     "saude": {"heartbeats": [{"chave": "carteiro", "atualizado_em": "2100-01-01T00:00:00Z", "detalhe": "ok"}], "ordens_abertas": []},
     "aprovar": {"item": {"id": "f1", "estado": "aprovada"}},
     "painel": {"setores": {
@@ -199,6 +201,19 @@ def main():
         page.click('#setor .promessas.deles li[data-cid="c1"] button.cumprida')
         page.wait_for_timeout(300)
         ok("agenda_cumprir" in acoes_fila, "cobrança: Cumprida dispara agenda_cumprir")
+
+        # Entrega 4: Garimpo — régua de meta, Garimpar alvos, ordens, Cancelar ordem
+        page.click('#setores a[href="#garimpo"]')
+        page.wait_for_selector('#setor ul.regua li[data-pid]')
+        ok("1/3" in page.inner_text('#setor ul.regua'), "garimpo: régua mostra VIP abaixo da meta")
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor ul.regua li[data-pid] button.garimpar')
+        page.wait_for_timeout(300)
+        ok("garimpo_criar" in acoes_fila, "garimpo: Garimpar alvos dispara garimpo_criar")
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor ul.ordens li[data-gid="g1"] button.cancelar')
+        page.wait_for_timeout(300)
+        ok("garimpo_marcar" in acoes_fila, "garimpo: Cancelar ordem dispara garimpo_marcar")
 
         # Entrega 3: Auditoria por VIP — árvore, selos, 4 colunas, Conferir agora, Amostra
         page.click('#setores a[href="#auditoria"]')
