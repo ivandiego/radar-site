@@ -64,3 +64,18 @@ test('faixaDoSetor: título, quem, rodada em BRT, fez, travado e alarmes do seto
   assert.deepEqual(f.travado, ['WhatsApp deslogado (QR) desde 14:40']); assert.equal(f.alarmes, 1); assert.equal(f.estado, 'atencao');
   assert.equal(faixaDoSetor({}, 'garimpo', 'UTC').estado, 'parado');
 });
+
+// Entrega 5 (spec §4): VIP mudo há 5+ dias
+import { vipsMudos } from '../js/painel.js';
+test('vipsMudos: VIP ativo sem interação há 5+ dias (ou nunca) entra, maior atraso primeiro; não-VIP, inativo e recente ficam fora', () => {
+  const now = new Date('2026-09-10T12:00:00Z');
+  const cs = [
+    { pessoa: { id: 'a', nome_exibicao: 'A', estagio: '3-x', diferenca_max: 1, ultima_interacao: '2026-09-01T12:00:00Z' }, pares: [] },
+    { pessoa: { id: 'b', nome_exibicao: 'B', estagio: '3-x', diferenca_max: 1, ultima_interacao: '2026-09-08T12:00:00Z' }, pares: [] },
+    { pessoa: { id: 'c', nome_exibicao: 'C', estagio: '3-x', diferenca_max: 0, ultima_interacao: null }, pares: [] },
+    { pessoa: { id: 'd', nome_exibicao: 'D', estagio: '4-x', diferenca_max: 1, ultima_interacao: null }, pares: [] },
+    { pessoa: { id: 'e', nome_exibicao: 'E', estagio: '1-x', diferenca_max: 1, ultima_interacao: null }, pares: [] },
+  ];
+  assert.deepEqual(vipsMudos(cs, now), [{ pessoaId: 'd', nome: 'D', dias: null }, { pessoaId: 'a', nome: 'A', dias: 9 }]);
+  assert.deepEqual(vipsMudos(cs, now, 10), [{ pessoaId: 'd', nome: 'D', dias: null }]);
+});

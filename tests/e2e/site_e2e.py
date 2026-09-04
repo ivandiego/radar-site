@@ -22,6 +22,9 @@ FIX = {
         "classificacao": "vip", "valor_do_que_tem": 350000, "diferenca_max": 100000,
         "gargalo": "esperando cliente ver fotos", "ultima_interacao": None,
         "criterios": "", "o_que_busca": "casa maior", "promessa_pendente": False, "telefone": "(11) 94956-4957",
+    }, {
+        "id": "v2", "nome_exibicao": "Vip Mudo", "estagio": "3-RESPONDEU", "classificacao": "vip", "valor_do_que_tem": 300000,
+        "diferenca_max": 50000, "ultima_interacao": "2026-08-01T00:00:00Z", "criterios": "", "telefone": None, "promessa_pendente": False, "gargalo": "",
     }],
     "par_lado": [
         {"par_id": "p1", "pessoa_id": "m1", "imovel_id": None},
@@ -29,7 +32,7 @@ FIX = {
     ],
     "par": [{
         "id": "p1", "apelido": "casa Boa Vista 500", "dono_respondeu": True,
-        "updated_at": "2100-01-01T00:00:00Z", "bloqueio": "", "descartado_motivo": None,
+        "updated_at": "2026-09-01T00:00:00Z", "bloqueio": "", "descartado_motivo": None,
     }],
     "imovel": [{
         "id": "i1", "olx_id": "111", "titulo": "Casa Boa Vista", "bairro": "Boa Vista",
@@ -44,6 +47,7 @@ function builder(tabela) {
   const b = { _rows: (FIX[tabela] || []).slice(), _single: false };
   for (const m of ['select','in','or','not','eq','is','order','limit','update','insert','upsert','delete'])
     b[m] = () => b;
+  b.update = (patch) => { globalThis.__ultimoPatch = patch; return b; };
   // .not(col,'is',null) filtra de verdade: sem isso o par pega o lado sem imóvel (stub mentia)
   b.not = (c, op, v) => { if (op === 'is' && v === null) b._rows = b._rows.filter((r) => r[c] != null); return b; };
   b.single = () => { b._single = true; return b; };
@@ -69,6 +73,8 @@ FILA = {
         "estado": "pendente_aprovacao", "criado_em": "2026-09-03T10:00:00Z",
     }]},
     "inbox_listar": {"itens": []},
+    "checklist_listar": {"itens": [{"par_id": "p1", "lado": "cliente", "etapa": "contactado"}, {"par_id": "p1", "lado": "dono", "etapa": "contactado"}]},
+    "conversa_recente": {"entrada": [{"criado_em": "2026-09-03T12:28:00Z", "remetente": "Mesach", "texto": "Posso te ligar?"}], "saida": []},
     "recepcao_listar": {"chegadas": [{"id": "m1", "canal": "whatsapp", "remetente": "Mesach", "destino": "5511949564957", "texto": "Posso te ligar?", "hora_olx": "09:27, 9/3/2026", "criado_em": "2026-09-03T12:28:00Z", "estado": "nova"}], "enviadas": [], "ordens": []},
     "varredura_criar": {"item": {"id": "v1", "estado": "pendente"}},
     "inbox_marcar": {"item": {"id": "m1", "estado": "ignorada"}},
@@ -146,30 +152,61 @@ def main():
         ok = lambda cond, msg: print(f"ok {msg}") if cond else (erros.append(f"ASSERT: {msg}"), print(f"FALHA {msg}"))
 
         ok(page.is_hidden("#login"), "sessao fake pula o login")
-        page.wait_for_selector("#tabela-vips tr.vip-row", timeout=5000)
-        ok("Mesach" in page.inner_text("#tabela-vips"), "tabela VIPs renderiza a pessoa")
-        ok("1/3" in page.inner_text("#tabela-vips"), "chip de alvos calculado (1/3)")
-        ok(all(page.locator(f"#carteira-legado {sel}").count() == 0 for sel in ["#inbox", "#agenda", "#fiscalizacao", "#garimpo", "#saude"]), "entrega 4: caixa/agenda/fiscalização/ordens/saúde saíram do legado")
+        # Entrega 5: Carteira como setor — tabela limpa
+        page.wait_for_selector('#setor table.vips tr.vip-row', timeout=5000)
+        ok("Mesach" in page.inner_text('#setor table.vips'), "carteira: tabela renderiza a pessoa")
+        ok("1/3" in page.inner_text('#setor table.vips'), "carteira: alvos/meta na tabela")
         ok("Varrer agora" in page.inner_text("header") and "Nova pessoa" in page.inner_text("header"), "entrega 4: cabeçalho com botões em texto")
-        ok("interacoes" in acoes_fila and "dele(a)" in page.inner_text("#tabela-vips"), "F9: ultima interacao vem da caixa (interacoes) e mostra a ultima palavra")
+        ok("interacoes" in acoes_fila and "dele(a)" in page.inner_text('#setor table.vips'), "F9: ultima interacao vem da caixa (interacoes) e mostra a ultima palavra")
+        ok(page.locator('#setor .reguas .alerta.peteca').count() >= 1, "carteira: réguas vencidas no topo (peteca do par respondido)")
+        ok(page.locator('#carteira-legado').count() == 0 and page.locator('#abas').count() == 0, "entrega 5: legado e aba Hoje saíram")
+        page.click('#setor th[data-o="cliente"]')
+        page.wait_for_timeout(200)
+        ok(("▼" in page.inner_text('#setor th[data-o="cliente"]')) or ("▲" in page.inner_text('#setor th[data-o="cliente"]')), "carteira: ordenação por coluna")
+        page.check('#setor input.todos')
+        page.wait_for_timeout(200)
+        ok("Mesach" in page.inner_text('#setor table.vips'), "carteira: Mostrar todos mantém o VIP")
 
-        page.click('#abas button[data-aba="hoje"]')
-        page.wait_for_selector("#alertas:not([hidden])")
-        ok(page.locator('#carteira-legado #fila-envio').count() == 0, "entrega 2: a fila de envio (✔) saiu da aba Hoje")
-
-        page.click('#abas button[data-aba="vips"]')
-        page.click("#tabela-vips tr.vip-row")
-        page.wait_for_timeout(300)
-        ok("casa Boa Vista 500" in page.inner_text("#tabela-vips"), "gaveta abre com o alvo do par")
-
-        # fix 03/09: ação que GRAVA no par (registrarNoPar → registro.js). Um import
-        # esquecido no api.js virou ReferenceError em produção e nenhum gate viu:
-        # node --check não pega identificador indefinido, e o E2E só lia.
+        # Entrega 5: ficha do VIP — dados, alvos com pontas, ações no par
+        page.click('#setor tr.vip-row[data-pessoa="m1"] button.abrir-ficha')
+        page.wait_for_selector('#setor .ficha table.alvos tr[data-par="p1"]')
+        ok("casa Boa Vista 500" in page.inner_text('#setor .ficha'), "ficha: alvo do par aparece")
+        ok("respondeu" in page.inner_text('#setor .ficha table.alvos'), "ficha: estado do alvo")
+        ok("checklist_listar" in acoes_fila and "conversa_recente" in acoes_fila, "ficha: busca pontas e conversa recente")
+        ok("Posso te ligar?" in page.inner_text('#setor .ficha .conversa-recente'), "ficha: conversa recente da caixa")
         page.once("dialog", lambda d: d.accept("nota de teste e2e"))
-        page.click('#tabela-vips button[data-acao="nota"]')
+        page.click('#setor .ficha tr[data-par="p1"] button[data-acao="nota"]')
         page.wait_for_timeout(800)
-        ok(page.inner_text("#toast").strip() == "Registrado ✔",
-           f"botão Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
+        ok(page.inner_text("#toast").strip() == "Registrado ✔", f"ficha: Nota grava no par (toast={page.inner_text('#toast').strip()!r})")
+        page.wait_for_selector('#setor .ficha table.alvos tr[data-par="p1"]')
+        page.once("dialog", lambda d: d.accept("topo"))
+        page.click('#setor .ficha tr[data-par="p1"] button[data-acao="respondeu"]')
+        page.wait_for_timeout(800)
+        ok(page.inner_text("#toast").strip() == "Registrado ✔", "ficha: Dono respondeu grava no par")
+        ok(page.evaluate("globalThis.__ultimoPatch && globalThis.__ultimoPatch.dono_respondeu === true"), "ficha: Dono respondeu marca dono_respondeu no patch")
+        page.wait_for_selector('#setor .ficha table.alvos tr[data-par="p1"]')
+        page.once("dialog", lambda d: d.accept("vendido"))
+        page.click('#setor .ficha tr[data-par="p1"] button[data-acao="morto"]')
+        page.wait_for_timeout(800)
+        ok(page.inner_text("#toast").strip() == "Registrado ✔" and "descartado_motivo" in str(page.evaluate("Object.keys(globalThis.__ultimoPatch)")), "ficha: Descartar par grava descartado_motivo")
+        page.wait_for_selector('#setor .ficha button.garimpar')
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor .ficha button.garimpar')
+        page.wait_for_timeout(300)
+        ok("garimpo_criar" in acoes_fila, "ficha: Garimpar alvos dispara garimpo_criar")
+        page.click('#setor .ficha button.editar')
+        page.wait_for_timeout(200)
+        ok(page.input_value('#novo-form input[name="nome"]').startswith("Mesach"), "ficha: Editar ficha abre o formulário preenchido")
+        page.click('#novo-fechar')
+        page.click('#novo-cliente')
+        page.wait_for_timeout(200)
+        ok(page.input_value('#novo-form input[name="nome"]') == "", "cabeçalho: Nova pessoa abre o formulário vazio")
+        page.fill('#novo-form input[name="nome"]', 'Teste E2E'); page.fill('#novo-form input[name="o_que_tem_texto"]', 'apto')
+        page.click('#novo-salvar')
+        page.wait_for_timeout(800)
+        ok("Cliente cadastrado" in page.inner_text('#toast'), "cabeçalho: Nova pessoa salva (insert no Supabase stubado)")
+        page.click('#setor .ficha a.voltar')
+        page.wait_for_selector('#setor table.vips tr.vip-row')
 
         # Entrega 1: Painel por setores com evidências + Diário com "Abrir prova"
         # Entrega 4: Recepção — faixa comum, o que chegou, Varrer agora, Escanear QR, Ignorar
@@ -242,6 +279,7 @@ def main():
         ok(acoes_fila.count("conferir_vip") >= 2, "auditoria: Amostra de 5 dispara conferir_vip")
         page.click('#setores a[href="#painel"]')
         page.wait_for_selector('#setor .cartao-setor')
+        ok("Vip Mudo" in page.inner_text('#setor .nao-acontecendo') and 'href="#carteira/v2"' in page.inner_html('#setor .nao-acontecendo'), "painel: VIP mudo 5+ dias com link pra ficha")
         ok(page.locator('#setor .cartao-setor').count() == 6, "painel: 6 cartões, um por setor")
         ok("37 chats lidos" in page.inner_text('#setor'), "painel: 'fez' em português")
         ok("WhatsApp deslogado" in page.inner_text('#setor'), "painel: travado aparece no cartão")
@@ -281,8 +319,8 @@ def main():
         ok("prova" in acoes_fila and "varrido" in page.inner_text('#ia-dialog').lower(), "diário: Abrir prova busca a prova e mostra no diálogo")
         page.click('#ia-fechar')
         page.click('#setores a[href="#carteira"]')
-        page.wait_for_selector('#tabela-vips tr.vip-row')
-        ok("Mesach" in page.inner_text('#tabela-vips'), "carteira: a tabela antiga continua funcionando")
+        page.wait_for_selector('#setor table.vips tr.vip-row')
+        ok("Mesach" in page.inner_text('#setor table.vips'), "carteira: voltar do diário reabre a tabela")
 
     srv.shutdown()
     if erros:

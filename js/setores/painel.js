@@ -1,14 +1,23 @@
 // Tela Painel (entrega 1): cartões por setor com evidências + "não está acontecendo".
-import { fila } from '../api.js';
-import { esc } from '../logic.js';
-import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel } from '../painel.js';
+import { fila, fetchCarteira } from '../api.js';
+import { esc, aplicarInteracoes } from '../logic.js';
+import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel, vipsMudos } from '../painel.js';
 
-let dados = null;
-export async function carregar() { dados = await fila('painel'); }
+let dados = null, carteiras = [];
+// Entrega 5: a régua "VIP mudo" lê a carteira com a mesma frescura da Carteira (interacoes da caixa)
+async function carteiraFresca() {
+  try {
+    const cs = await fetchCarteira();
+    try { const tels = cs.flatMap((c) => [c.pessoa.telefone, c.pessoa.contato_privado]).filter(Boolean); if (tels.length) aplicarInteracoes(cs, (await fila('interacoes', { telefones: tels })).por_telefone || {}); } catch (e) { console.warn('interacoes indisponivel:', e.message); }
+    return cs;
+  } catch (e) { console.warn('carteira indisponivel:', e.message); return []; }
+}
+export async function carregar() { [dados, carteiras] = await Promise.all([fila('painel'), carteiraFresca()]); }
 export function render(el) {
   const cartoes = cartoesDoPainel(dados || { setores: {} }, 'America/Sao_Paulo');
   const nao = naoAcontecendo(dados || {});
   const alarmes = alarmesDoPainel(dados || {}, 'America/Sao_Paulo');
+  const mudos = vipsMudos(carteiras, new Date());
   el.innerHTML = `
     <div class="faixa-setor"><h2>Painel</h2><span>o que os robôs fizeram nas últimas 24h, com prova</span></div>
     ${alarmes.length ? `<div class="alarmes"><h3>🔴 Alarmes abertos (${alarmes.length})</h3><ul>${alarmes.map((a) => `
@@ -23,7 +32,7 @@ export function render(el) {
       </div>`).join('')}
     </div>
     <div class="nao-acontecendo"><h3>O que NÃO está acontecendo</h3>
-      ${nao.length ? `<ul>${nao.map((n) => `<li>${esc(n.texto)} — <a href="#diario/${n.setor}">${esc(n.setorTitulo)}</a></li>`).join('')}</ul>` : '<p>nada pendente</p>'}
+      ${nao.length || mudos.length ? `<ul>${nao.map((n) => `<li>${esc(n.texto)} — <a href="#diario/${n.setor}">${esc(n.setorTitulo)}</a></li>`).join('')}${mudos.map((v) => `<li class="vip-mudo">${esc(v.nome)} ${v.dias === null ? 'sem interação registrada' : 'mudo há ' + v.dias + ' dias'} — <a href="#carteira/${esc(v.pessoaId)}">Carteira</a></li>`).join('')}</ul>` : '<p>nada pendente</p>'}
     </div>`;
   el.querySelectorAll('.alarmes button.resolver').forEach((b) => b.addEventListener('click', async () => {
     const id = b.closest('li').dataset.alarme;

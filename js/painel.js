@@ -1,5 +1,6 @@
 // Painel (entrega 1, spec §4): view-model PURO dos cartões por setor e do
 // bloco "o que NÃO está acontecendo". Sem DOM. Testado em tests/painel.test.mjs.
+import { pessoaAtiva, diasDesde } from './logic.js';
 export const ROTULOS_SETOR = {
   recepcao: { titulo: 'Recepção', quem: 'Coletor + Ouvidor' },
   redacao: { titulo: 'Redação', quem: 'Pensador' },
@@ -52,4 +53,13 @@ export function faixaDoSetor(payload, setor, tz = 'UTC') {
   const c = cartoesDoPainel(payload || {}, tz).find((x) => x.setor === setor);
   const alarmes = ((payload && payload.alarmes) || []).filter((a) => a.setor === setor).length;
   return { titulo: c.titulo, quem: c.quem, rodada: c.rodada, fez: c.fez, travado: c.travado, alarmes, estado: c.estado };
+}
+
+// Entrega 5 (spec §4): "VIP mudo há 5+ dias" — VIP ativo sem interação registrada há N dias (ou nunca).
+export function vipsMudos(carteiras, now = new Date(), dias = 5) {
+  return (carteiras || [])
+    .filter((c) => (c.pessoa.diferenca_max || 0) > 0 && pessoaAtiva(c.pessoa))
+    .map((c) => ({ pessoaId: c.pessoa.id, nome: c.pessoa.nome_exibicao || '', dias: diasDesde(c.pessoa.ultima_interacao, now) }))
+    .filter((x) => x.dias === null || x.dias >= dias)
+    .sort((a, b) => (a.dias === null ? -1 : b.dias === null ? 1 : b.dias - a.dias));
 }
