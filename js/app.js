@@ -3,6 +3,8 @@ import { diasDesde, bolaDe, alvosVivos, paresVivosDe, alertasDe, filaDoDia, meta
 import { FUNCTIONS_URL } from './config.js?v=1788493671';
 import * as painel from './setores/painel.js?v=1788493671';
 import * as diario from './setores/diario.js?v=1788493671';
+import * as redacao from './setores/redacao.js?v=1788493671';
+import * as expedicao from './setores/expedicao.js?v=1788493671';
 
 const $ = (s) => document.querySelector(s);
 let carteiras = [];
@@ -595,7 +597,7 @@ async function carregar() {
       const tels = carteiras.flatMap((c) => [c.pessoa.telefone, c.pessoa.contato_privado]).filter(Boolean);
       if (tels.length) aplicarInteracoes(carteiras, (await fila('interacoes', { telefones: tels })).por_telefone || {});
     } catch (e) { console.warn('interacoes indisponivel:', e.message); }
-    renderAlertas(); renderTabela(); carregarFilaEnvio(); carregarInbox(); carregarGarimpo(); carregarAgenda(); carregarFiscalizacao(); carregarSaude();
+    renderAlertas(); renderTabela(); carregarInbox(); carregarGarimpo(); carregarAgenda(); carregarFiscalizacao(); carregarSaude(); // entrega 2: fila de envio virou a Redação
     mostrarAba(abaAtual);
     $('#atualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
@@ -709,7 +711,7 @@ function mostrarAba(nome) {
   document.querySelectorAll('#abas button').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
 }
 // Entrega 1: roteamento por setor (hash). #carteira = conteúdo anterior, intacto.
-const SETORES_TELA = { painel };
+const SETORES_TELA = { painel, redacao, expedicao };
 async function rotear() {
   const hash = location.hash || '#painel';
   const [rota, arg] = hash.slice(1).split('/');

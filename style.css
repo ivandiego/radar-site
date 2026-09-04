@@ -179,3 +179,14 @@ table.diario td.hora { white-space: nowrap; color: var(--tx2); }
 .alarmes { border: 1px solid var(--verm); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
 .alarmes h3 { margin: 0 0 8px; color: var(--verm); }
 .alarmes li { margin: 6px 0; } .alarmes button { margin-left: 8px; }
+
+/* Entrega 2: Redação e Expedição */
+.grupo-redacao { border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+.grupo-redacao .disse { color: var(--tx2); font-style: italic; margin: 6px 0; }
+.grupo-redacao .aviso { color: var(--amarelo); margin: 6px 0; }
+.grupo-redacao li { margin: 10px 0; padding-top: 8px; border-top: 1px dashed var(--linha); list-style: none; }
+.grupo-redacao li.dup { opacity: .7; }
+.grupo-redacao textarea { width: 100%; }
+.grupo-redacao .acoes button, .falhas .acoes button { margin-right: 8px; margin-top: 6px; }
+.falhas li, .enviadas li { list-style: none; margin: 8px 0; padding-bottom: 8px; border-bottom: 1px dashed var(--linha); }
+.falhas .erro { color: var(--verm); }
