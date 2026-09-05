@@ -30,7 +30,7 @@ export function parVivo(par, imovel) {
   if (par.descartado_motivo) return false;
   const txt = `${par.apelido || ''} ${par.bloqueio || ''}`;
   if (txt.includes('[DUPLICADO]')) return false;
-  if (imovel && imovel.status_inventario === 'morto') return false;
+  if (imovel && (imovel.status_inventario === 'morto' || imovel.status_inventario === 'anuncio_excluido')) return false; // F4.5.8: anúncio apagado na OLX não é alvo vivo
   return true;
 }
 

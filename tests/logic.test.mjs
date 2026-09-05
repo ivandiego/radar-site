@@ -168,3 +168,8 @@ test('F4.5.2 canalDoDestino: list-id → olx_anuncio, chat-id → olx, telefone 
   assert.equal(canalDoDestino('olx', '==6rAixl===@conference.olxbr'), 'olx');
   assert.equal(canalDoDestino('whatsapp', '(13) 98844-4944'), 'whatsapp');
 });
+
+test('F4.5.8 parVivo: anúncio excluído na OLX não é alvo vivo', () => {
+  assert.equal(parVivo({ id: 'p' }, { status_inventario: 'anuncio_excluido' }), false);
+  assert.equal(parVivo({ id: 'p' }, { status_inventario: 'disponivel' }), true);
+});

@@ -63,3 +63,12 @@ test('patchPessoa: números e nulos; insert ganha defaults; update não', () => 
   const upd = patchPessoa(campos, true, '04/09', '2026-09-04T12:00:00Z');
   assert.equal(upd.estagio, undefined); assert.equal(upd.ultima_interacao, undefined); assert.equal(upd.nome_exibicao, 'Ana'); assert.equal(upd.atualizado_via, 'site');
 });
+
+test('F4.5.8 fichaDe: alvo com anúncio excluído sai dos vivos e aparece em excluidos', () => {
+  const f = fichaDe({ pessoa: { id: 'v', nome_exibicao: 'Mateus' }, pares: [
+    { par: { id: 'p1', apelido: 'Jonny', dono_respondeu: true, updated_at: '2026-09-03T00:00:00Z' }, imovel: { status_inventario: 'anuncio_excluido' } },
+    { par: { id: 'p2', apelido: 'Ryan', dono_respondeu: false, updated_at: '2026-09-03T00:00:00Z' }, imovel: { status_inventario: 'disponivel' } },
+  ] }, new Map(), new Date('2026-09-05T12:00:00Z'));
+  assert.deepEqual(f.alvos.map((a) => a.apelido), ['Ryan']);
+  assert.deepEqual(f.excluidos, [{ parId: 'p1', apelido: 'Jonny' }]);
+});
