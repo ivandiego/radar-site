@@ -167,3 +167,12 @@ export function payloadGarimpo(p) {
     criterios: `Busca: ${p.o_que_busca || '?'}. Tem: ${p.o_que_tem_texto || '?'} (${p.valor_do_que_tem || '?'}). Adiciona: ${p.diferenca_max || '?'}. ${JSON.stringify(p.criterios || []).slice(0, 400)}`,
   };
 }
+
+// F4.5.2: canal da sondagem pelo destino — list-id do anúncio (conversa ainda não existe) é olx_anuncio;
+// chat-id é olx; telefone é whatsapp. A edge normaliza também, mas o site manda o certo de saída.
+export function canalDoDestino(canal, destino) {
+  const d = String(destino || '').trim();
+  if (canal === 'whatsapp') return 'whatsapp';
+  if (/^[0-9]{8,12}$/.test(d)) return 'olx_anuncio';
+  return 'olx';
+}
