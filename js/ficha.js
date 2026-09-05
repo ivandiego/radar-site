@@ -12,11 +12,11 @@ const VALOR = {
 export function linhasDaTabela(carteiras, { soVips = true, col = null, asc = false } = {}, now = new Date()) {
   const linhas = (carteiras || []).filter((c) => pessoaAtiva(c.pessoa) && (!soVips || (c.pessoa.diferenca_max || 0) > 0)).map((c) => {
     const p = c.pessoa; const vivos = paresVivosDe(c); const respondidos = vivos.filter((x) => x.par.dono_respondeu).length;
-    const alvos = alvosVivos(c, now); const meta = metaAlvosDe(p); const diasInt = diasDesde(p.ultima_interacao, now);
+    const alvos = alvosVivos(c, now); const ativos = vivos.length; const meta = metaAlvosDe(p); const diasInt = diasDesde(p.ultima_interacao, now); // alvos = régua (respondeu ou mexido <96h); ativos = todo par não descartado/excluído
     const it = p.interacao;
     return {
       id: p.id, nome: p.nome_exibicao || '', linkOlx: linkOlx(p.link_thread_olx_privado), tem: p.valor_do_que_tem || 0, adiciona: p.diferenca_max || 0,
-      alvos, meta, clsAlvos: alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn', respondidos, mudos: vivos.length - respondidos,
+      alvos, ativos, meta, clsAlvos: alvos === 0 ? 'bad' : alvos >= meta ? 'ok' : 'warn', respondidos, mudos: vivos.length - respondidos,
       diasInt, ultimaPalavra: it ? (it.ultima_palavra === 'nos' ? 'nossa' : 'dele(a)') : null,
       dicaInt: it ? `última palavra: ${it.ultima_palavra === 'nos' ? 'nossa' : 'dele(a)'}${it.texto ? ' — ' + it.texto : ''}` : 'campo do site (sem registro na caixa)',
       bola: bolaDe(p.gargalo), comissao: comissaoDe(c, now), canal: p.canal || '', canalMorto: canalMorto(p), problema: !!p.promessa_pendente,
@@ -26,8 +26,28 @@ export function linhasDaTabela(carteiras, { soVips = true, col = null, asc = fal
   return f ? linhas.sort((a, b) => (f(a) > f(b) ? 1 : f(a) < f(b) ? -1 : 0) * (asc ? 1 : -1)) : linhas.sort((a, b) => b.comissao - a.comissao);
 }
 const ETAPAS = ['contactado', 'valor', 'fotos', 'aceite', 'visita_ok'];
-function negocioDe(ck, par) {
-  if (!ck) return null;
+// 05/09: o portão "Negócio n/5" só lia o checklist manual (par_checklist) e dizia "falta valor do cliente" com o
+// valor escrito no topo da ficha. Agora as etapas que a FICHA já prova entram sozinhas: cliente contactado (tem
+// telefone ou thread), valor do cliente (tem + adiciona preenchidos); dono contactado (respondeu), valor do dono
+// (anúncio com preço). O checklist manual continua valendo por cima (fotos, aceite, visita).
+export function etapasDaFicha(pessoa, par, imovel) {
+  const cliente = new Set(); const dono = new Set(); const p = pessoa || {};
+  if (p.telefone || p.contato_privado || p.link_thread_olx_privado) cliente.add('contactado');
+  if ((p.valor_do_que_tem || 0) > 0 && p.diferenca_max != null) cliente.add('valor');
+  if (par && par.dono_respondeu) dono.add('contactado');
+  if (imovel && (imovel.valor || 0) > 0) dono.add('valor');
+  return { cliente, dono };
+}
+// pontas mostradas na tela = ficha ∪ checklist manual (mesma base do portão)
+function pontasDe(ck, pessoa, par, imovel) {
+  const b = etapasDaFicha(pessoa, par, imovel);
+  return { cliente: ETAPAS.filter((e) => b.cliente.has(e) || (ck && ck.cliente && ck.cliente.has(e))), dono: ETAPAS.filter((e) => b.dono.has(e) || (ck && ck.dono && ck.dono.has(e))) };
+}
+function negocioDe(ck, par, pessoa, imovel) {
+  const base = etapasDaFicha(pessoa, par, imovel);
+  const cliente = new Set([...base.cliente, ...((ck && ck.cliente) || [])]); const dono = new Set([...base.dono, ...((ck && ck.dono) || [])]);
+  if (!cliente.size && !dono.size) return null;
+  ck = { cliente, dono };
   const nC = ck.cliente.size, nD = ck.dono.size; const atras = nC <= nD ? 'cliente' : 'dono'; const n = Math.min(nC, nD);
   const feitos = ck[atras]; const falta = ETAPAS.find((e) => !feitos.has(e)) || null;
   const bola = par.dono_respondeu && falta && ['valor', 'fotos', 'aceite'].includes(falta) && atras === 'dono' ? 'nós (completar a ponta)' : par.dono_respondeu ? 'nós' : 'dono';
@@ -46,13 +66,13 @@ export function fichaDe(carteira, checklist, now = new Date()) {
       parId: par.id, apelido: par.apelido || 'par', linkOlx: linkOlx(imovel && imovel.link_fonte_privado), valor: (imovel && imovel.valor) || null,
       estado, estadoTexto: estado === 'respondeu' ? 'respondeu' : estado === 'mudo' ? `mudo há ${dias}d` : 'aguardando',
       canalResposta: par.dono_respondeu ? (/whats/i.test(nota) ? 'Whats' : /olx|thread|chat da olx/i.test(nota) ? 'OLX' : '') : '',
-      dias, telAnunciante: (imovel && imovel.telefone_anunciante) || '', pontas: { cliente: c ? [...c.cliente] : [], dono: c ? [...c.dono] : [] },
-      negocio: negocioDe(c, par), historico: (par.bloqueio || '').slice(0, 900),
+      dias, telAnunciante: (imovel && imovel.telefone_anunciante) || '', pontas: pontasDe(c, p, par, imovel),
+      negocio: negocioDe(c, par, p, imovel), historico: (par.bloqueio || '').slice(0, 900),
     };
   });
   const descartados = (carteira.pares || []).filter((x) => x.par.descartado_motivo).map(({ par }) => ({ parId: par.id, apelido: par.apelido || 'par', motivo: par.descartado_motivo }));
   return {
-    pessoa: { id: p.id, nome: p.nome_exibicao || '', classificacao: p.classificacao || 'indefinido', tem: p.o_que_tem_texto || '', valorTem: p.valor_do_que_tem || 0, busca: p.o_que_busca || '', adiciona: p.diferenca_max || 0, telefone: p.telefone || p.contato_privado || '', canal: p.canal || '', canalMorto: canalMorto(p), linkOlx: linkOlx(p.link_thread_olx_privado), gargalo: p.gargalo || '', proximoPasso: p.proximo_passo || '', meta: metaAlvosDe(p), alvos: alvosVivos(carteira, now), comissao: comissaoDe(carteira, now) },
+    pessoa: { id: p.id, nome: p.nome_exibicao || '', classificacao: p.classificacao || 'indefinido', ativos: vivos.length, tem: p.o_que_tem_texto || '', valorTem: p.valor_do_que_tem || 0, busca: p.o_que_busca || '', adiciona: p.diferenca_max || 0, telefone: p.telefone || p.contato_privado || '', canal: p.canal || '', canalMorto: canalMorto(p), linkOlx: linkOlx(p.link_thread_olx_privado), gargalo: p.gargalo || '', proximoPasso: p.proximo_passo || '', meta: metaAlvosDe(p), alvos: alvosVivos(carteira, now), comissao: comissaoDe(carteira, now) },
     alvos, descartados, excluidos,
   };
 }
