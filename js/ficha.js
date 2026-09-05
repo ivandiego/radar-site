@@ -35,7 +35,9 @@ function negocioDe(ck, par) {
 }
 export function fichaDe(carteira, checklist, now = new Date()) {
   const p = carteira.pessoa; const ck = checklist || new Map();
-  const vivos = (carteira.pares || []).filter((x) => !x.par.descartado_motivo).sort((a, b) => (b.par.dono_respondeu ? 1 : 0) - (a.par.dono_respondeu ? 1 : 0));
+  // F4.5.8: alvo cujo anúncio foi excluído na OLX (marcado pela auditoria) não é vivo — vai pra lista própria
+  const excluidos = (carteira.pares || []).filter((x) => !x.par.descartado_motivo && x.imovel && x.imovel.status_inventario === 'anuncio_excluido').map(({ par }) => ({ parId: par.id, apelido: par.apelido || 'par' }));
+  const vivos = (carteira.pares || []).filter((x) => !x.par.descartado_motivo && !(x.imovel && x.imovel.status_inventario === 'anuncio_excluido')).sort((a, b) => (b.par.dono_respondeu ? 1 : 0) - (a.par.dono_respondeu ? 1 : 0));
   const alvos = vivos.map(({ par, imovel }) => {
     const nota = par.notas || par.bloqueio || ''; const dias = diasDesde(par.updated_at, now);
     const estado = par.dono_respondeu ? 'respondeu' : (dias ?? 99) >= 2 ? 'mudo' : 'aguardando';
@@ -51,7 +53,7 @@ export function fichaDe(carteira, checklist, now = new Date()) {
   const descartados = (carteira.pares || []).filter((x) => x.par.descartado_motivo).map(({ par }) => ({ parId: par.id, apelido: par.apelido || 'par', motivo: par.descartado_motivo }));
   return {
     pessoa: { id: p.id, nome: p.nome_exibicao || '', classificacao: p.classificacao || 'indefinido', tem: p.o_que_tem_texto || '', valorTem: p.valor_do_que_tem || 0, busca: p.o_que_busca || '', adiciona: p.diferenca_max || 0, telefone: p.telefone || p.contato_privado || '', canal: p.canal || '', canalMorto: canalMorto(p), linkOlx: linkOlx(p.link_thread_olx_privado), gargalo: p.gargalo || '', proximoPasso: p.proximo_passo || '', meta: metaAlvosDe(p), alvos: alvosVivos(carteira, now), comissao: comissaoDe(carteira, now) },
-    alvos, descartados,
+    alvos, descartados, excluidos,
   };
 }
 export function reguasDe(carteira, now = new Date()) {

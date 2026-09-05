@@ -90,6 +90,7 @@ async function renderFicha(el) {
         <td class="num">${a.dias ?? '?'}d</td><td>${esc(a.telAnunciante) || '—'}</td>
         <td><button data-acao="ia-redigir">Responder</button><button data-acao="respondeu">Dono respondeu</button><button data-acao="nota">Nota</button><button data-acao="morto">Descartar par</button></td></tr>`).join('') || '<tr><td colspan="7">nenhum alvo ativo</td></tr>'}
     </tbody></table></div>
+    ${(f.excluidos || []).length ? `<p class="excluidos"><b>Anúncio excluído na OLX (${f.excluidos.length}):</b> ${f.excluidos.map((d) => esc(d.apelido)).join(' · ')} — não contam como alvo vivo; chame o Garimpo.</p>` : ''}
     ${f.descartados.length ? `<details class="descartados"><summary>Descartados (${f.descartados.length})</summary><ul>${f.descartados.map((d) => `<li><b>${esc(d.apelido)}</b> — ${esc(d.motivo)}</li>`).join('')}</ul></details>` : ''}
   </div>`;
   const recarregar = async () => { await carregar(); await renderFicha(el); };

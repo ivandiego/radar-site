@@ -9,7 +9,7 @@ export function arvoreDoVip(carteira) {
   const out = [{ papel: 'VIP', rotulo: p.nome_exibicao || '?', telefone: telVip, chave: chave8(telVip) }];
   for (const { par, imovel } of carteira.pares || []) {
     if (!par || par.descartado_motivo) continue;
-    if (imovel && imovel.status_inventario === 'morto') continue;
+    if (imovel && (imovel.status_inventario === 'morto' || imovel.status_inventario === 'anuncio_excluido')) continue;
     const tel = (imovel && imovel.telefone_anunciante) || null;
     out.push({ papel: 'alvo', rotulo: par.apelido || (imovel && imovel.titulo) || 'alvo', telefone: tel, chave: chave8(tel) });
   }
