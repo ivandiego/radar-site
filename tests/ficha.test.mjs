@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { linhasDaTabela, fichaDe, reguasDe, conversaOrdenada, patchDaAcao, patchPessoa } from '../js/ficha.js';
+import { linhasDaTabela, fichaDe, reguasDe, conversaOrdenada, patchDaAcao, patchPessoa, etapasDaFicha } from '../js/ficha.js';
 const now = new Date('2026-09-04T12:00:00Z');
 const par = (id, extra) => ({ par: { id, apelido: 'casa ' + id, updated_at: '2026-09-03T12:00:00Z', bloqueio: '', dono_respondeu: false, ...extra }, imovel: { id: 'i' + id, valor: 500000, telefone_anunciante: '(13) 99999-0001', link_fonte_privado: 'https://sp.olx.com.br/x-1401234567' } });
 const mesach = { pessoa: { id: 'm1', nome_exibicao: 'Mesach', estagio: '3-RESPONDEU', classificacao: 'vip', valor_do_que_tem: 350000, diferenca_max: 100000, gargalo: 'esperando cliente ver fotos', telefone: '(11) 94956-4957', canal: 'whatsapp', ultima_interacao: '2026-09-02T12:00:00Z', interacao: { ultima_palavra: 'deles', texto: 'Posso te ligar?' }, criterios: '' },
@@ -11,7 +11,7 @@ test('linhasDaTabela: só ativos, só VIPs por padrão, comissão desc; campos c
   const l = linhasDaTabela([mesach, ana, lead], { soVips: true }, now);
   assert.deepEqual(l.map((x) => x.id), ['m1']);
   const m = l[0];
-  assert.equal(m.alvos, 2); assert.equal(m.meta, 3); assert.equal(m.clsAlvos, 'warn'); assert.equal(m.respondidos, 1); assert.equal(m.mudos, 1);
+  assert.equal(m.alvos, 2); assert.equal(m.ativos, 2); assert.equal(m.meta, 3); assert.equal(m.clsAlvos, 'warn'); assert.equal(m.respondidos, 1); assert.equal(m.mudos, 1);
   assert.equal(m.diasInt, 2); assert.equal(m.ultimaPalavra, 'dele(a)'); assert.match(m.dicaInt, /Posso te ligar/);
   assert.equal(m.bola, 'cliente'); assert.equal(m.comissao, 30000); assert.equal(m.canal, 'whatsapp'); assert.equal(m.canalMorto, false);
   const todos = linhasDaTabela([mesach, ana, lead], { soVips: false }, now);
@@ -30,10 +30,13 @@ test('fichaDe: pessoa, alvos vivos com estado/pontas/negócio, descartados separ
   assert.equal(f.alvos.length, 2); assert.equal(f.descartados.length, 1); assert.equal(f.descartados[0].motivo, 'vendido (site, 01/09)');
   const a = f.alvos.find((x) => x.parId === 'a');
   assert.equal(a.estado, 'respondeu'); assert.equal(a.canalResposta, 'Whats'); assert.equal(a.linkOlx, 'https://sp.olx.com.br/x-1401234567'); assert.equal(a.dias, 1);
-  assert.deepEqual(a.pontas, { cliente: ['contactado', 'valor'], dono: ['contactado'] });
-  assert.deepEqual(a.negocio, { n: 1, falta: 'valor', atras: 'dono', bola: 'nós (completar a ponta)' });
+  // 05/09: a ficha já prova cliente contactado+valor (telefone, tem+adiciona) e o anúncio tem preço → dono ganha 'valor'
+  assert.deepEqual(a.pontas, { cliente: ['contactado', 'valor'], dono: ['contactado', 'valor'] });
+  assert.deepEqual(a.negocio, { n: 2, falta: 'fotos', atras: 'cliente', bola: 'nós' });
   const b = f.alvos.find((x) => x.parId === 'b');
-  assert.equal(b.estado, 'aguardando'); assert.equal(b.negocio, null); assert.deepEqual(b.pontas, { cliente: [], dono: [] });
+  assert.equal(b.estado, 'aguardando'); assert.deepEqual(b.pontas, { cliente: ['contactado', 'valor'], dono: ['valor'] });
+  assert.deepEqual(b.negocio, { n: 1, falta: 'contactado', atras: 'dono', bola: 'dono' }); // falta o DONO responder, não "valor do cliente"
+  assert.equal(f.pessoa.ativos, 2);
   assert.equal(fichaDe({ ...mesach, pares: [par('z', { updated_at: '2026-08-20T12:00:00Z' })] }, null, now).alvos[0].estado, 'mudo');
 });
 test('reguasDe: peteca primeiro, só os 4 tipos', () => {
@@ -71,4 +74,14 @@ test('F4.5.8 fichaDe: alvo com anúncio excluído sai dos vivos e aparece em exc
   ] }, new Map(), new Date('2026-09-05T12:00:00Z'));
   assert.deepEqual(f.alvos.map((a) => a.apelido), ['Ryan']);
   assert.deepEqual(f.excluidos, [{ parId: 'p1', apelido: 'Jonny' }]);
+});
+
+test('etapasDaFicha: portão lê o que a ficha já prova; sem telefone/valor não inventa', () => {
+  const e = etapasDaFicha({ telefone: '(13) 98844-4944', valor_do_que_tem: 250000, diferenca_max: 300000 }, { dono_respondeu: true }, { valor: 550000 });
+  assert.deepEqual([...e.cliente], ['contactado', 'valor']); assert.deepEqual([...e.dono], ['contactado', 'valor']);
+  const v = etapasDaFicha({ link_thread_olx_privado: '==x@conference.olxbr', valor_do_que_tem: 0 }, { dono_respondeu: false }, { valor: null });
+  assert.deepEqual([...v.cliente], ['contactado']); assert.deepEqual([...v.dono], []);
+  assert.deepEqual([...etapasDaFicha({}, {}, {}).cliente], []);
+  // sem checklist manual e sem nada na ficha → negócio null (como antes)
+  assert.equal(fichaDe({ pessoa: { id: 'x', nome_exibicao: 'X' }, pares: [{ par: { id: 'p', updated_at: '2026-09-03T12:00:00Z' }, imovel: { id: 'i' } }] }, null, now).alvos[0].negocio, null);
 });

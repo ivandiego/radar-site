@@ -33,7 +33,7 @@ function renderTabela(el) {
     <tbody>${linhas.map((l) => `<tr class="vip-row ${l.problema ? 'problema' : ''}" data-pessoa="${esc(l.id)}">
       <td class="nome-cel">${esc(l.nome)}${l.linkOlx ? ` <a href="${esc(l.linkOlx)}" target="_blank" rel="noopener">↗</a>` : ''}</td>
       <td class="num">${l.tem ? fmtK(l.tem) : '—'}</td><td class="num ok">${l.adiciona ? '+' + fmtK(l.adiciona) : '—'}</td>
-      <td class="num ${l.clsAlvos}">${l.alvos}/${l.meta}</td><td class="num ok">${l.respondidos}</td><td class="num ${l.mudos ? 'warn' : ''}">${l.mudos}</td>
+      <td class="num ${l.clsAlvos}" title="vivos pela régua (respondeu ou mexido em 96h) / meta · ativos = todo par não descartado nem excluído">${l.alvos}/${l.meta} <small>${l.ativos} ativos</small></td><td class="num ok">${l.respondidos}</td><td class="num ${l.mudos ? 'warn' : ''}">${l.mudos}</td>
       <td class="num ${l.diasInt === null ? '' : l.diasInt >= 2 ? 'bad' : l.diasInt >= 1 ? 'warn' : 'ok'}" title="${esc(l.dicaInt)}">${l.diasInt === null ? '—' : l.diasInt + 'd'}${l.ultimaPalavra ? ` <small>${l.ultimaPalavra}</small>` : ''}</td>
       <td>${esc(l.bola)}</td><td class="com">${fmtK(l.comissao)}</td><td>${l.canalMorto ? '<span class="bad">☠ ' + esc(l.canal) + '</span>' : esc(l.canal || '—')}</td>
       <td><button class="abrir-ficha">Abrir ficha</button></td></tr>`).join('') || '<tr><td colspan="11">nenhuma pessoa ativa</td></tr>'}</tbody></table></div>`;
@@ -76,14 +76,14 @@ async function renderFicha(el) {
   await carregarFicha(c);
   const f = fichaDe(c, checklist, new Date()); const p = f.pessoa; const reguas = reguasDe(c, new Date());
   el.innerHTML = `<div class="ficha">
-    <div class="faixa-setor"><a class="voltar" href="#carteira">← Voltar à tabela</a><h2>${esc(p.nome)}</h2><span>${esc(p.classificacao)}</span><span>${p.alvos}/${p.meta} alvos</span><span>comissão ${fmtK(p.comissao)}</span></div>
+    <div class="faixa-setor"><a class="voltar" href="#carteira">← Voltar à tabela</a><h2>${esc(p.nome)}</h2><span>${esc(p.classificacao)}</span><span>${p.alvos}/${p.meta} vivos pela régua · ${p.ativos} ativos</span><span>comissão ${fmtK(p.comissao)}</span></div>
     <div class="acoes-setor"><button class="editar">Editar ficha</button><button class="garimpar">Garimpar alvos</button></div>
     <div class="dados"><div><b>Tem:</b> ${esc(p.tem)} ${p.valorTem ? '(' + fmtK(p.valorTem) + ')' : ''}</div><div><b>Busca:</b> ${esc(p.busca) || '—'}</div><div><b>Adiciona:</b> ${p.adiciona ? '+' + fmtK(p.adiciona) : '—'}</div>
       <div><b>Telefone:</b> ${esc(p.telefone) || '<span class="bad">sem tel</span>'}</div><div><b>Canal:</b> ${p.canalMorto ? '<span class="bad">☠ ' + esc(p.canal) + '</span>' : esc(p.canal) || '—'} ${p.linkOlx ? `<a href="${esc(p.linkOlx)}" target="_blank" rel="noopener">anúncio ↗</a>` : ''}</div>
       <div><b>Gargalo:</b> ${esc(p.gargalo) || '—'}</div><div><b>Próximo passo:</b> ${esc(p.proximoPasso) || '—'}</div></div>
     <div class="reguas">${reguas.map((a) => `<div class="alerta ${esc(a.tipo)}">${esc(a.msg)}</div>`).join('')}</div>
     <div class="conversa-recente">${conversa.length ? '<b>Conversa recente:</b>' + conversa.map((m) => `<div class="msg-linha"><span class="quando">${m.quando}</span> ${esc(m.quem)}: ${esc(m.texto)}</div>`).join('') : ''}</div>
-    <h3>Alvos (${f.alvos.length})</h3>
+    <h3>Alvos (${f.alvos.length} ativos · ${p.alvos} vivos pela régua)</h3>
     <div class="rolagem"><table class="alvos"><thead><tr><th>Alvo</th><th>Valor</th><th>Estado</th><th>Pontas</th><th>Parado</th><th>Tel anunciante</th><th>Ações</th></tr></thead><tbody>
       ${f.alvos.map((a) => `<tr data-par="${esc(a.parId)}"><td>${a.linkOlx ? `<a href="${esc(a.linkOlx)}" target="_blank" rel="noopener">${esc(a.apelido)} ↗</a>` : esc(a.apelido)}</td><td class="num">${a.valor ? fmtK(a.valor) : '—'}</td>
         <td><span class="est-${a.estado}">${esc(a.estadoTexto)}${a.canalResposta ? ' (' + a.canalResposta + ')' : ''}</span></td><td><span class="pontas">${pontasHtml(a.pontas)}</span>${negocioHtml(a.negocio)}</td>
