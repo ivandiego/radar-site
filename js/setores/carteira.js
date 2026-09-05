@@ -1,7 +1,7 @@
 // Tela Carteira (entrega 5, spec §2/§5): tabela de VIPs limpa (#carteira) + ficha por VIP (#carteira/<id>).
 // Ações do dono moram aqui: Nova pessoa · Editar ficha · Nota · Dono respondeu · Descartar par · Responder · Garimpar alvos.
 import { sb, fila, fetchCarteira, registrarNoPar } from '../api.js';
-import { esc, aplicarInteracoes, payloadGarimpo } from '../logic.js';
+import { esc, aplicarInteracoes, payloadGarimpo, canalDoDestino } from '../logic.js';
 import { linhasDaTabela, reguasDe, fichaDe, conversaOrdenada, patchDaAcao, patchPessoa } from '../ficha.js';
 import { toast, abrirDialogo, invocar } from '../ui.js';
 
@@ -125,7 +125,7 @@ export async function enfileirarRascunho(texto) {
   if (!canal) return;
   const destino = prompt('Destino (' + (canal === 'olx' ? 'list-id do anúncio' : 'telefone') + '):', canal === 'olx' ? (olxId ? olxId[1] : '') : (p.telefone || p.contato_privado || ''));
   if (!destino) return;
-  try { await fila('criar', { canal, destino, destino_rotulo: alvo.apelido || p.nome_exibicao, par_id: alvo.parId, texto, origem: 'ia' }); $('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação'); rascunho = null; } catch (e) { toast(e.message, true); }
+  try { await fila('criar', { canal: canalDoDestino(canal, destino), destino, destino_rotulo: alvo.apelido || p.nome_exibicao, par_id: alvo.parId, texto, origem: 'ia' }); $('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação'); rascunho = null; } catch (e) { toast(e.message, true); }
 }
 
 // ---------- Nova pessoa / Editar ficha ----------

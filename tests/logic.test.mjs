@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { parVivo, alvoVivo, bolaDe, alvosVivos, alertasDe, comissaoDe, filaDoDia, diasDesde, metaAlvosDe } from '../js/logic.js';
+import { canalDoDestino } from '../js/logic.js';
 
 test('metaAlvosDe: padrão 3 sem tag', () => assert.equal(metaAlvosDe({ criterios: 'apto 3q Santos' }), 3));
 test('metaAlvosDe: lê meta_alvos dos critérios', () => assert.equal(metaAlvosDe({ criterios: 'teto 749. meta_alvos: 10' }), 10));
@@ -160,4 +161,10 @@ test('payloadGarimpo: mesmo payload do botão da Carteira', () => {
   const g = payloadGarimpo(p);
   assert.equal(g.pessoa_id, 'p1'); assert.equal(g.pessoa_nome, 'Mesach'); assert.equal(g.meta, 4);
   assert.equal(g.criterios, 'Busca: apto 2q. Tem: casa (500000). Adiciona: 100000. ["meta_alvos: 4"]');
+});
+
+test('F4.5.2 canalDoDestino: list-id → olx_anuncio, chat-id → olx, telefone → whatsapp', () => {
+  assert.equal(canalDoDestino('olx', '1530752790'), 'olx_anuncio');
+  assert.equal(canalDoDestino('olx', '==6rAixl===@conference.olxbr'), 'olx');
+  assert.equal(canalDoDestino('whatsapp', '(13) 98844-4944'), 'whatsapp');
 });
