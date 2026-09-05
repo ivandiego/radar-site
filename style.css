@@ -190,3 +190,11 @@ li.vip-aud.vermelho { border-left: 3px solid var(--verm); } li.vip-aud.amarelo {
 li.vip-aud ul.motivos { margin: 4px 0 0 12px; padding: 0; } li.vip-aud ul.motivos li { list-style: disc; font-size: 0.9em; padding: 1px 0; border: 0; }
 li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
 .resumo-vips { margin: 4px 0 8px; font-weight: 600; }
+
+/* F4.6.3b/F4.6.5: rodada da auditoria por agente + confronto canal × site por VIP */
+.rodada-aud li.agente { padding: .35rem 0; border-bottom: 1px solid #eee; }
+.rodada-aud li.agente.atencao b { color: #b3261e; }
+.rodada-aud .aviso { color: #b3261e; font-weight: 600; }
+.vip-aud .confronto { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-size: .85rem; margin: .3rem 0; }
+.vip-aud .confronto div { background: #f6f6f6; padding: .3rem .5rem; border-radius: 4px; }
+@media (max-width: 700px) { .vip-aud .confronto { grid-template-columns: 1fr; } }

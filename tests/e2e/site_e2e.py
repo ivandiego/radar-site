@@ -84,7 +84,7 @@ FILA = {
     "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
-    "auditoria_listar": {"rodada_em": "2026-09-05T09:00:00Z", "resumo": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1}, "vips": [
+    "auditoria_listar": {"rodada_em": "2026-09-05T09:00:00Z", "rodada": "R1", "agentes": {"leitor": {"atualizado_em": "2026-09-05T09:00:00Z", "detalhe": {"pedidos": 58, "lidos": 49, "pulados": 9, "rodada": "R1"}}, "confrontador": {"atualizado_em": "2026-09-05T09:05:00Z", "detalhe": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1, "rodada": "R1"}}}, "resumo": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1}, "vips": [
         {"pessoa_id": "m1", "nome": "Mateus", "veredito": "vermelho", "motivos": [{"codigo": "alvo_excluido_marcado_disponivel", "texto": "anúncio 1523198681 excluído na OLX, site marca disponivel", "gravidade": "vermelho"}], "alvos": [{"estado": {"estado_real": "excluido"}}], "evidencias": [], "canal_ultima": "dele(a) 2026-09-02T11:49: Bom dia, tudo bem"},
         {"pessoa_id": "b1", "nome": "Bio", "veredito": "verde", "motivos": [], "alvos": [], "evidencias": []}]},
     "fiscalizacao_listar": {"abertas": [{"id": "v1", "tipo": "ignorada_suspeita", "gravidade": "alta", "referencia": "mensagem_recebida:m1", "descricao": "Mesach: Posso te ligar?", "criado_em": "2026-09-04T09:00:00Z"}], "resolvidas": []},
