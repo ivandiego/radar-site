@@ -183,3 +183,10 @@ header button { font-size: 13px; }
 details.descartados { margin-top: 10px; color: var(--tx2); }
 table.alvos { width: 100%; border-collapse: collapse; } table.alvos td, table.alvos th { padding: 4px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; text-align: left; }
 table.alvos .acoes button, table.alvos td button { margin: 2px 4px 2px 0; }
+
+/* F4.5.9: VIPs hoje (auditoria mecânica) */
+li.vip-aud { list-style: none; padding: 6px 8px; border-bottom: 1px solid var(--linha); }
+li.vip-aud.vermelho { border-left: 3px solid var(--verm); } li.vip-aud.amarelo { border-left: 3px solid var(--ambar); } li.vip-aud.verde { border-left: 3px solid #2e9e5b; }
+li.vip-aud ul.motivos { margin: 4px 0 0 12px; padding: 0; } li.vip-aud ul.motivos li { list-style: disc; font-size: 0.9em; padding: 1px 0; border: 0; }
+li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+.resumo-vips { margin: 4px 0 8px; font-weight: 600; }

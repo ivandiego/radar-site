@@ -19,3 +19,20 @@ export function violacoesAgrupadas(payload, tz = 'UTC') {
   const resolvidas = ((payload && payload.resolvidas) || []).map((v) => item(v, tz));
   return { abertas, resolvidas, total: abertas.alta.length + abertas.media.length + abertas.baixa.length };
 }
+
+// F4.5.9: auditoria mecânica de VIPs (última rodada) — a unidade é o VIP; vermelho > amarelo > verde.
+const COR_ROTULO = { vermelho: 'site não bate com o canal', amarelo: 'alguém espera por nós', verde: 'site bate com o canal' };
+export function vipsDaAuditoria(payload, tz = 'UTC') {
+  const linhas = (payload && payload.vips) || [];
+  const peso = { vermelho: 0, amarelo: 1, verde: 2 };
+  const vips = linhas.map((v) => ({
+    pessoaId: v.pessoa_id || '', nome: v.nome || '?', veredito: peso[v.veredito] == null ? 'vermelho' : v.veredito,
+    rotulo: COR_ROTULO[v.veredito] || COR_ROTULO.vermelho,
+    motivos: (Array.isArray(v.motivos) ? v.motivos : []).map((m) => ({ codigo: String(m.codigo || ''), texto: String(m.texto || m.codigo || ''), gravidade: m.gravidade || 'vermelho' })),
+    alvos: Array.isArray(v.alvos) ? v.alvos.length : 0,
+    alvosExcluidos: (Array.isArray(v.alvos) ? v.alvos : []).filter((a) => a && a.estado && a.estado.estado_real === 'excluido').length,
+    canalUltima: v.canal_ultima || '', prints: Array.isArray(v.evidencias) ? v.evidencias.length : 0,
+  })).sort((a, b) => peso[a.veredito] - peso[b.veredito] || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const resumo = { total: vips.length, vermelhos: vips.filter((v) => v.veredito === 'vermelho').length, amarelos: vips.filter((v) => v.veredito === 'amarelo').length, verdes: vips.filter((v) => v.veredito === 'verde').length };
+  return { vips, resumo, rodada: payload && payload.rodada_em ? fmt(payload.rodada_em, tz) : null };
+}
