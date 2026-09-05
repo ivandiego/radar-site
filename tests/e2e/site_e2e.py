@@ -84,6 +84,9 @@ FILA = {
     "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
+    "auditoria_listar": {"rodada_em": "2026-09-05T09:00:00Z", "resumo": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1}, "vips": [
+        {"pessoa_id": "m1", "nome": "Mateus", "veredito": "vermelho", "motivos": [{"codigo": "alvo_excluido_marcado_disponivel", "texto": "anúncio 1523198681 excluído na OLX, site marca disponivel", "gravidade": "vermelho"}], "alvos": [{"estado": {"estado_real": "excluido"}}], "evidencias": [], "canal_ultima": "dele(a) 2026-09-02T11:49: Bom dia, tudo bem"},
+        {"pessoa_id": "b1", "nome": "Bio", "veredito": "verde", "motivos": [], "alvos": [], "evidencias": []}]},
     "fiscalizacao_listar": {"abertas": [{"id": "v1", "tipo": "ignorada_suspeita", "gravidade": "alta", "referencia": "mensagem_recebida:m1", "descricao": "Mesach: Posso te ligar?", "criado_em": "2026-09-04T09:00:00Z"}], "resolvidas": []},
     "violacao_resolver": {"item": {"id": "v1"}},
     "garimpo_listar": {"itens": [{"id": "g1", "estado": "pendente", "pessoa_nome": "Mesach", "meta": 3, "criado_em": "2026-09-04T11:00:00Z"}]},
@@ -259,6 +262,11 @@ def main():
         page.click('#setores a[href="#fiscalizacao"]')
         page.wait_for_selector('#setor li.viol[data-vid="v1"]')
         ok("ignorada suspeita" in page.inner_text('#setor') and 'href="#redacao"' in page.inner_html('#setor'), "fiscalização: violação aponta o setor que resolve")
+        # F4.5.9: VIPs hoje — veredito por VIP da auditoria mecânica, vermelho primeiro, motivo escrito, link pra Carteira
+        page.wait_for_selector('#setor li.vip-aud.vermelho[data-pessoa="m1"]')
+        ok("1 vermelhos" in page.inner_text('#setor .resumo-vips') and "1 verdes" in page.inner_text('#setor .resumo-vips'), "fiscalização: resumo dos VIPs por cor")
+        ok("excluído na OLX" in page.inner_text('#setor li.vip-aud.vermelho') and 'href="#carteira/m1"' in page.inner_html('#setor li.vip-aud.vermelho'), "fiscalização: motivo do VIP vermelho e link pra Carteira")
+        ok("auditoria_listar" in acoes_fila, "fiscalização: busca a última rodada da auditoria")
         page.click('#setor li.viol[data-vid="v1"] button.resolvida')
         page.wait_for_timeout(300)
         ok("violacao_resolver" in acoes_fila, "fiscalização: Resolvida dispara violacao_resolver")
