@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788532308';
-import { registrarNoPar as registrarNoParCom } from './registro.js?v=1788532308';
-import { montarCarteira } from './carteira.js?v=1788532308';
+import { SUPABASE_URL, PUBLISHABLE_KEY, FUNCTIONS_URL } from './config.js?v=1788616806';
+import { registrarNoPar as registrarNoParCom } from './registro.js?v=1788616806';
+import { montarCarteira } from './carteira.js?v=1788616806';
 
 export const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
 
