@@ -198,3 +198,15 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .vip-aud .confronto { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-size: .85rem; margin: .3rem 0; }
 .vip-aud .confronto div { background: #f6f6f6; padding: .3rem .5rem; border-radius: 4px; }
 @media (max-width: 700px) { .vip-aud .confronto { grid-template-columns: 1fr; } }
+
+/* F4.10 — Estatística */
+.est-grade { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: .5rem 0 1rem; }
+.est-cartao { background: #f6f6f6; border-radius: 6px; padding: .6rem .8rem; }
+.est-cartao h3 { margin: 0 0 .4rem; font-size: 1rem; }
+.est-cartao ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.est-cartao .alerta { color: #b3261e; }
+.est-tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.est-tabela th, .est-tabela td { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid #eee; vertical-align: top; }
+.est-tabela tr.melhor td { background: #e8f5e9; }
+.est-tabela.bola tr.nunca td { background: #fdecea; }
+@media (max-width: 700px) { .est-grade { grid-template-columns: 1fr; } }

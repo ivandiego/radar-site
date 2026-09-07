@@ -13,6 +13,7 @@ import * as cobranca from './setores/cobranca.js?v=1788640476';
 import * as garimpo from './setores/garimpo.js?v=1788640476';
 import * as fiscalizacao from './setores/fiscalizacao.js?v=1788640476';
 import * as carteira from './setores/carteira.js?v=1788640476';
+import * as estatistica from './setores/estatistica.js?v=1788640476';
 
 const $ = (s) => document.querySelector(s);
 
@@ -30,7 +31,7 @@ async function resumoDia() {
 }
 
 // Roteamento por setor (hash): #painel (padrão), #diario/<setor>, #carteira, #carteira/<pessoaId>, …
-const SETORES_TELA = { painel, recepcao, redacao, expedicao, cobranca, garimpo, fiscalizacao, auditoria, carteira };
+const SETORES_TELA = { painel, recepcao, redacao, expedicao, cobranca, garimpo, fiscalizacao, auditoria, carteira, estatistica };
 async function rotear() {
   const hash = location.hash || '#painel';
   const [rota, arg] = hash.slice(1).split('/');

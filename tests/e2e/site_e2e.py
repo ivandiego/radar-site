@@ -84,6 +84,12 @@ FILA = {
     "agenda_lembrar": {"item": {"id": "f9", "estado": "aprovada"}},
     "agenda_listar": {"itens": []},
     "violacao_listar": {"itens": []},
+    "estatistica_ultima": {"ultima": {"rodada": "R1", "calculado_em": "2026-09-07T12:00:00Z", "dados": {"calculado_em": "2026-09-07T12:00:00Z", "conversas": 6,
+        "olx": {"abordagens": 3, "respondidas": 1, "taxa": 33, "mediana_h": 4, "dentro_24h": 1, "uma_msg": 2, "mudos": 2, "mudos_2msgs": 1, "por_mes": {}, "iniciadas_por_eles": 1, "respondidas_por_nos": 1,
+            "por_abertura": [{"abertura": "sou corretor e trabalho com permuta", "abordagens": 1, "respondidas": 0, "taxa": 0}, {"abertura": "nome + anúncio", "abordagens": 3, "respondidas": 3, "taxa": 100}]},
+        "whatsapp": {"abordagens": 1, "respondidas": 1, "taxa": 100, "mediana_h": 0.5, "dentro_24h": 1, "uma_msg": 1, "mudos": 0, "mudos_2msgs": 0, "por_mes": {}, "por_abertura": [], "iniciadas_por_eles": 1, "respondidas_por_nos": 0},
+        "bola_conosco": [{"canal": "whatsapp", "destino": "5511999990001", "cab": "Carla", "dias": 6, "ultima": "Oi, vi o anúncio", "ultima_em": "2026-09-01T10:00:00Z", "nunca_respondida": True}]}},
+        "serie": [{"rodada": "R1", "calculado_em": "2026-09-07T12:00:00Z", "conversas": 6, "olx_abordagens": 3, "olx_respondidas": 1, "olx_taxa": 33, "wa_bola": 1, "olx_bola": 0}]},
     "auditoria_listar": {"rodada_em": "2026-09-05T09:00:00Z", "rodada": "R1", "agentes": {"leitor": {"atualizado_em": "2026-09-05T09:00:00Z", "detalhe": {"pedidos": 58, "lidos": 49, "pulados": 9, "rodada": "R1"}}, "confrontador": {"atualizado_em": "2026-09-05T09:05:00Z", "detalhe": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1, "rodada": "R1"}}}, "resumo": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1}, "vips": [
         {"pessoa_id": "m1", "nome": "Mateus", "veredito": "vermelho", "motivos": [{"codigo": "alvo_excluido_marcado_disponivel", "texto": "anúncio 1523198681 excluído na OLX, site marca disponivel", "gravidade": "vermelho"}], "alvos": [{"estado": {"estado_real": "excluido"}}], "evidencias": [], "canal_ultima": "dele(a) 2026-09-02T11:49: Bom dia, tudo bem"},
         {"pessoa_id": "b1", "nome": "Bio", "veredito": "verde", "motivos": [], "alvos": [], "evidencias": []}]},
@@ -267,6 +273,15 @@ def main():
         ok("1 vermelhos" in page.inner_text('#setor .resumo-vips') and "1 verdes" in page.inner_text('#setor .resumo-vips'), "fiscalização: resumo dos VIPs por cor")
         ok("excluído na OLX" in page.inner_text('#setor li.vip-aud.vermelho') and 'href="#carteira/m1"' in page.inner_html('#setor li.vip-aud.vermelho'), "fiscalização: motivo do VIP vermelho e link pra Carteira")
         ok("auditoria_listar" in acoes_fila, "fiscalização: busca a última rodada da auditoria")
+        # F4.10: tela Estatística — números por canal, frase de abertura e quem espera resposta nossa
+        page.click('#setores a[href="#estatistica"]')
+        page.wait_for_selector('#setor .est-cartao')
+        ok("estatistica_ultima" in acoes_fila, "estatística: busca a última estatística")
+        ok("1 de 3" in page.inner_text('#setor .est-grade') and "30 min" in page.inner_text('#setor .est-grade'), "estatística: cartões OLX e WhatsApp com taxa e mediana")
+        ok("nome + anúncio" in page.inner_text('#setor .est-abertura') and "melhor" in page.inner_text('#setor .est-abertura'), "estatística: abertura com a melhor destacada")
+        ok("Carla" in page.inner_text('#setor .est-bola') and "nunca respondida" in page.inner_text('#setor .est-bola'), "estatística: quem espera resposta nossa")
+        page.click('#setores a[href="#fiscalizacao"]')
+        page.wait_for_selector('#setor li.viol[data-vid="v1"]')
         page.click('#setor li.viol[data-vid="v1"] button.resolvida')
         page.wait_for_timeout(300)
         ok("violacao_resolver" in acoes_fila, "fiscalização: Resolvida dispara violacao_resolver")
