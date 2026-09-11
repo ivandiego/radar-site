@@ -110,13 +110,18 @@ FILA = {
     "alarme_resolver": {"item": {"id": "a1"}},
     "redacao_listar": {"grupos": [{"destino": "5513988444944", "rotulo": "EWS", "canal": "whatsapp",
         "recebida": {"texto": "Ivan, o apartamento no Ipiranga é uma excelente opção", "hora": "2026-09-02T11:08:00Z"},
-        "rascunhos": [{"id": "f1", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:11:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": None},
+        "rascunhos": [{"id": "f1", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:11:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": None,
+                       "chegou_depois": {"texto": "e aí, conseguiu a ficha?", "hora": "2026-09-03T18:00:00Z"}},
                       {"id": "f2", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:19:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": "f1"}]}]},
     "aprovar_editado": {"item": {"id": "f1", "estado": "aprovada"}},
     "rejeitar": {"item": {"id": "f2", "estado": "rejeitada"}},
     "expedicao_listar": {"enviadas": [{"id": "e1", "destino_rotulo": "Vitor", "canal": "whatsapp", "texto": "Boa noite Vitor", "enviado_em": "2026-09-01T22:58:00Z", "prova_envio": "whats 22:58 trecho"}],
                          "falhas": [{"id": "x1", "destino": "5513981780293", "destino_rotulo": "Maracanã", "canal": "whatsapp", "texto": "Oi, Ivan…", "erro": "WhatsApp Web nao reconhece", "criado_em": "2026-09-02T23:00:00Z"}]},
     "tentar_de_novo": {"item": {"id": "x1", "estado": "aprovada"}},
+    "caixa_da_conversa": {"canal": "whatsapp", "destino": "5513999990001", "mensagens": [
+        {"id": "m-a", "texto": "tem permuta?", "criado_em": "2026-09-10T13:00:00Z", "estado": "nova"},
+        {"id": "m-b", "texto": "e o valor?", "criado_em": "2026-09-10T13:05:00Z", "estado": "nova"}]},
+    "criar": {"item": {"id": "novo1", "estado": "pendente_aprovacao"}},
     "auditoria_vip": {"por_telefone": {
         "49564957": {"auditoria": {"selo": "auditada", "motivos": [], "linhas": [
             {"quem": "ele(a)", "texto": "Posso te ligar?", "hora_canal": "2026-09-02T22:29:00.000Z", "hora_registro": "2026-09-02T22:30:00Z", "prova": "mensagem_recebida:r1", "ok": True, "motivo": None}]}},
@@ -140,7 +145,7 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
 
-    erros, acoes_fila = [], []
+    erros, acoes_fila, payloads = [], [], {}
     with sync_playwright() as pw:
         page = pw.chromium.launch().new_page()
         page.on("pageerror", lambda e: erros.append(f"pageerror: {e}"))
@@ -150,10 +155,11 @@ def main():
         page.route("**://fonts.g**", lambda r: r.abort())
 
         def fila_stub(route):
-            acao = json.loads(route.request.post_data or "{}").get("acao")
-            acoes_fila.append(acao)
+            corpo = json.loads(route.request.post_data or "{}"); acao = corpo.get("acao")
+            acoes_fila.append(acao); payloads[acao] = corpo
             route.fulfill(content_type="application/json", body=json.dumps(FILA.get(acao, {"itens": []})))
         page.route("**/functions/v1/fila", fila_stub)
+        page.route("**/functions/v1/redigir", lambda r: r.fulfill(content_type="application/json", body=json.dumps({"texto": "Oi, tudo bem? Sobre o valor: 400 mil."})))
 
         page.goto(base + "/index.html#carteira")
         page.wait_for_selector("#painel:not([hidden])", timeout=8000)
@@ -193,6 +199,20 @@ def main():
         page.wait_for_timeout(800)
         ok(page.inner_text("#toast").strip() == "Registrado ✔", "ficha: Dono respondeu grava no par")
         ok(page.evaluate("globalThis.__ultimoPatch && globalThis.__ultimoPatch.dono_respondeu === true"), "ficha: Dono respondeu marca dono_respondeu no patch")
+        # F4.20 (PR D): Responder → "+ Fila" pergunta quais mensagens o texto cobre e manda responde_ids no criar
+        page.wait_for_selector('#setor .ficha table.alvos tr[data-par="p1"]')
+        respostas = iter(["resposta", "whatsapp", "5513999990001", "2"])
+        def responde(d):
+            if d.type == "confirm": d.accept(); return
+            d.accept(next(respostas, ""))
+        page.on("dialog", responde)
+        page.click('#setor .ficha tr[data-par="p1"] button[data-acao="ia-redigir"]')
+        page.wait_for_selector('#ia-dialog[open] #ia-fila:not([hidden])', timeout=4000)
+        page.click('#ia-fila')
+        page.wait_for_timeout(800)
+        page.remove_listener("dialog", responde)
+        ok("caixa_da_conversa" in acoes_fila and (payloads.get("criar") or {}).get("responde_ids") == ["m-b"],
+           f"ficha: Responder pergunta o que o texto cobre e manda responde_ids no criar ({payloads.get('criar')})")
         page.wait_for_selector('#setor .ficha table.alvos tr[data-par="p1"]')
         page.once("dialog", lambda d: d.accept("vendido"))
         page.click('#setor .ficha tr[data-par="p1"] button[data-acao="morto"]')
@@ -317,6 +337,8 @@ def main():
         page.wait_for_selector('#setor .grupo-redacao')
         ok("apartamento no Ipiranga" in page.inner_text('#setor'), "redação: mostra o que o cliente disse")
         ok("rascunhos iguais" in page.inner_text('#setor'), "redação: aviso de duplicata")
+        ok("chegou mensagem depois deste texto" in page.inner_text('#setor .grupo-redacao li[data-fid="f1"]') and "conseguiu a ficha" in page.inner_text('#setor'),
+           "redação: F4.20 avisa a mensagem que chegou depois do rascunho")
         page.click('#setor .grupo-redacao li[data-fid="f1"] button.editar')
         page.fill('#setor .grupo-redacao li[data-fid="f1"] textarea', 'Bom dia EWS, texto editado pelo dono')
         page.click('#setor .grupo-redacao li[data-fid="f1"] button.aprovar-editado')
@@ -332,6 +354,12 @@ def main():
         page.click('#setor .falhas li button.tentar')
         page.wait_for_timeout(300)
         ok("tentar_de_novo" in acoes_fila, "expedição: Tentar de novo")
+        ok("ficam até você decidir" in page.inner_text('#setor .faixa-setor'), "expedição: F4.20 falha sem janela de tempo")
+        antes = acoes_fila.count("rejeitar")
+        page.once("dialog", lambda d: d.accept("destino errado"))
+        page.click('#setor .falhas li button.rejeitar')
+        page.wait_for_timeout(300)
+        ok(acoes_fila.count("rejeitar") == antes + 1 and payloads["rejeitar"].get("id") == "x1", "expedição: F4.20 Rejeitar a falha (libera a conversa)")
         page.click('#setores a[href="#painel"]')
         page.wait_for_selector('#setor .cartao-setor')
         page.click('#setor .cartao-setor[data-setor="recepcao"] a.ver-diario')

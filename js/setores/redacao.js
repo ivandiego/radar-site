@@ -19,6 +19,7 @@ export function render(el) {
         <ul>${g.rascunhos.map((r) => `
           <li data-fid="${esc(r.id)}" class="${r.ehDuplicata ? 'dup' : ''}">
             <div class="meta"><small>${r.hora} · ${esc(r.origem)}${r.ehDuplicata ? ' · duplicata' : ''}</small></div>
+            ${r.chegouDepois ? `<div class="aviso chegou-depois">⚠ chegou mensagem depois deste texto (${r.chegouDepois.hora}): “${esc(r.chegouDepois.texto)}”</div>` : ''}
             <div class="texto">${esc(r.texto)}</div>
             <div class="editor" hidden><textarea rows="4">${esc(r.texto)}</textarea></div>
             <div class="acoes">

@@ -4,6 +4,7 @@ import { sb, fila, fetchCarteira, registrarNoPar } from '../api.js';
 import { esc, aplicarInteracoes, payloadGarimpo, canalDoDestino } from '../logic.js';
 import { linhasDaTabela, reguasDe, fichaDe, conversaOrdenada, patchDaAcao, patchPessoa } from '../ficha.js';
 import { toast, abrirDialogo, invocar } from '../ui.js';
+import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js';
 
 const TZ = 'America/Sao_Paulo';
 const $ = (s) => document.querySelector(s);
@@ -126,7 +127,18 @@ export async function enfileirarRascunho(texto) {
   if (!canal) return;
   const destino = prompt('Destino (' + (canal === 'olx' ? 'list-id do anúncio' : 'telefone') + '):', canal === 'olx' ? (olxId ? olxId[1] : '') : (p.telefone || p.contato_privado || ''));
   if (!destino) return;
-  try { await fila('criar', { canal: canalDoDestino(canal, destino), destino, destino_rotulo: alvo.apelido || p.nome_exibicao, par_id: alvo.parId, texto, origem: 'ia' }); $('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação'); rascunho = null; } catch (e) { toast(e.message, true); }
+  // F4.20: o Ivan escolhe quais mensagens da pessoa este texto responde (responde_ids) — a caixa segue pelos fatos
+  let responde_ids = [];
+  try {
+    const { mensagens } = await fila('caixa_da_conversa', { canal: canalDoDestino(canal, destino), destino });
+    if (mensagens && mensagens.length) {
+      let escolha = idsDaEscolha(mensagens, prompt(perguntaDasMensagens(mensagens), 'todas'));
+      while (escolha && !escolha.ok) escolha = idsDaEscolha(mensagens, prompt(escolha.erro + '\n\n' + perguntaDasMensagens(mensagens), 'todas'));
+      if (!escolha) return;
+      responde_ids = escolha.ids;
+    }
+  } catch (e) { toast('Não consegui ler a conversa: ' + e.message, true); return; }
+  try { await fila('criar', { canal: canalDoDestino(canal, destino), destino, destino_rotulo: alvo.apelido || p.nome_exibicao, par_id: alvo.parId, texto, origem: 'ia', responde_ids }); $('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação'); rascunho = null; } catch (e) { toast(e.message, true); }
 }
 
 // ---------- Nova pessoa / Editar ficha ----------

@@ -4,7 +4,9 @@ const fmt = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit',
 
 export function gruposDaRedacao(payload, agora = new Date(), tz = 'UTC') {
   return (payload.grupos || []).map((g) => {
-    const rascunhos = (g.rascunhos || []).map((r) => ({ id: r.id, texto: r.texto || '', hora: fmt(r.criado_em, tz), origem: r.origem || '', duplicado_de: r.duplicado_de || null, ehDuplicata: !!r.duplicado_de }));
+    // F4.20: chegouDepois = mensagem da pessoa que chegou DEPOIS deste texto (o Ivan não aprova às cegas)
+    const rascunhos = (g.rascunhos || []).map((r) => ({ id: r.id, texto: r.texto || '', hora: fmt(r.criado_em, tz), origem: r.origem || '', duplicado_de: r.duplicado_de || null, ehDuplicata: !!r.duplicado_de,
+      chegouDepois: r.chegou_depois ? { texto: r.chegou_depois.texto || '', hora: fmt(r.chegou_depois.hora, tz) } : null }));
     const dups = rascunhos.filter((r) => r.ehDuplicata).length;
     const tempos = (g.rascunhos || []).map((r) => new Date(r.criado_em).getTime()).filter((t) => !Number.isNaN(t)).sort((a, b) => a - b);
     return {

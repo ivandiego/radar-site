@@ -6,8 +6,14 @@ cd "$(dirname "$0")"
 V=$(date +%s)
 sed -i '' -E "s|(js/app\.js)(\?v=[0-9]*)?|\1?v=$V|" index.html
 sed -i '' -E "s|(style\.css)(\?v=[0-9]*)?|\1?v=$V|" index.html
-sed -i '' -E 's|from '"'"'\./(logic\|api\|config\|ui\|setores/carteira\|setores/painel\|setores/diario\|setores/redacao\|setores/expedicao\|setores/auditoria\|setores/recepcao\|setores/cobranca\|setores/garimpo\|setores/fiscalizacao)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/app.js
-sed -i '' -E 's|from '"'"'\./(config\|registro\|carteira)\.js(\?v=[0-9]*)?'"'"'|from '"'"'./\1.js?v='"$V"''"'"'|g' js/api.js
+# 11/09: TODO import relativo de js/ e js/setores/ ganha a MESMA versão. Antes só app.js e api.js eram reescritos:
+# os imports de dentro de setores/ ficavam sem ?v (o navegador podia servir módulo velho sem a função nova → a tela
+# quebra com "does not provide an export") e estatistica.js ficou preso numa versão antiga. Mesma versão em todo
+# lugar também faz cada módulo carregar UMA vez (api.js e logic.js carregavam duas: com e sem ?v).
+for f in js/*.js js/setores/*.js; do
+  sed -i '' -E "s#from '(\.\.?/[A-Za-z0-9_/-]+)\.js(\?v=[0-9]*)?'#from '\1.js?v=$V'#g" "$f"
+done
+if grep -rnE "from '\.\.?/[^']+\.js'" js/ ; then echo "IMPORT SEM VERSÃO - abortado"; exit 1; fi
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 # gates (PR 3 da revisão): sintaxe de TODO js + unit + E2E Playwright real —
 # um SyntaxError em app.js derrubava o painel inteiro e o deploy não via

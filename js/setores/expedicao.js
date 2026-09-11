@@ -18,12 +18,12 @@ async function abrirProva(id) {
 export function render(el) {
   const { enviadas, falhas } = linhasDaExpedicao(dados || {}, 'America/Sao_Paulo');
   el.innerHTML = `
-    <div class="faixa-setor"><h2>Expedição</h2><span>Carteiro</span><span>${enviadas.length} enviadas · ${falhas.length} falhas (48h)</span></div>
+    <div class="faixa-setor"><h2>Expedição</h2><span>Carteiro</span><span>${enviadas.length} enviadas (48h) · ${falhas.length} falha${falhas.length === 1 ? '' : 's'} esperando você (ficam até você decidir)</span></div>
     <div class="falhas"><h3>Falhas de envio</h3>
       ${falhas.length ? `<ul>${falhas.map((f) => `
         <li data-fid="${esc(f.id)}"><b>${esc(f.rotulo)}</b> <small>${esc(f.canal)} · ${f.hora}</small>
           <div class="texto">${esc(f.texto)}</div><div class="erro">erro: ${esc(f.erro)}</div>
-          <div class="acoes"><button class="tentar">Tentar de novo</button><button class="manual">Mandei eu mesmo</button></div>
+          <div class="acoes"><button class="tentar">Tentar de novo</button><button class="manual">Mandei eu mesmo</button><button class="rejeitar">Rejeitar</button></div>
         </li>`).join('')}</ul>` : '<p>nenhuma falha</p>'}
     </div>
     <div class="enviadas"><h3>Enviadas</h3>
@@ -37,6 +37,12 @@ export function render(el) {
     const id = li.dataset.fid;
     li.querySelector('button.tentar').addEventListener('click', async () => { try { await fila('tentar_de_novo', { id }); await recarregar(); } catch (e) { alert(e.message); } });
     li.querySelector('button.manual').addEventListener('click', async () => { try { await fila('mandei_eu_mesmo', { id }); await recarregar(); } catch (e) { alert(e.message); } });
+    // F4.20: falhou ocupa a conversa até você decidir — rejeitar libera (a caixa volta a nova pelo cálculo do banco)
+    li.querySelector('button.rejeitar').addEventListener('click', async () => {
+      const motivo = prompt('Motivo em uma linha (vai pro diário e ensina o Pensador):');
+      if (motivo === null) return;
+      try { await fila('rejeitar', { id, motivo }); await recarregar(); } catch (e) { alert('Não consegui rejeitar: ' + e.message); }
+    });
   });
   el.querySelectorAll('.enviadas button.abrir-prova').forEach((b) => b.addEventListener('click', () => abrirProva(b.closest('li').dataset.fid)));
 }
