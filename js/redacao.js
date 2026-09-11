@@ -22,5 +22,7 @@ export function linhasDaExpedicao(payload, tz = 'UTC') {
   return {
     enviadas: (payload.enviadas || []).map((e) => ({ id: e.id, rotulo: e.destino_rotulo || e.destino, canal: e.canal, texto: e.texto || '', hora: fmt(e.enviado_em, tz), prova: e.prova_envio || '' })),
     falhas: (payload.falhas || []).map((f) => ({ id: f.id, rotulo: f.destino_rotulo || f.destino, canal: f.canal, texto: f.texto || '', hora: fmt(f.criado_em, tz), erro: f.erro || '' })),
+    // 11/09: na fila pra sair — aprovada errada ainda pode ser recolhida antes do Carteiro pegar
+    aprovadas: (payload.aprovadas || []).map((a) => ({ id: a.id, rotulo: a.destino_rotulo || a.destino, canal: a.canal, texto: a.texto || '', hora: fmt(a.aprovado_em || a.criado_em, tz) })),
   };
 }
