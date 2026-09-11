@@ -1,19 +1,19 @@
 // app.js (entrega 5): sessão, cabeçalho, diálogos comuns e roteamento por setor.
 // Toda tela mora em js/setores/<setor>.js ({configurar?, carregar, render}); a lógica pura em módulos testados.
-import { sessao, login, logout, fetchCarteira } from './api.js?v=1789146756';
-import { diasDesde, filaDoDia, esc } from './logic.js?v=1789146756';
-import { toast, abrirDialogo, invocar, aoEnfileirar } from './ui.js?v=1789146756';
-import * as painel from './setores/painel.js?v=1789146756';
-import * as diario from './setores/diario.js?v=1789146756';
-import * as redacao from './setores/redacao.js?v=1789146756';
-import * as expedicao from './setores/expedicao.js?v=1789146756';
-import * as auditoria from './setores/auditoria.js?v=1789146756';
-import * as recepcao from './setores/recepcao.js?v=1789146756';
-import * as cobranca from './setores/cobranca.js?v=1789146756';
-import * as garimpo from './setores/garimpo.js?v=1789146756';
-import * as fiscalizacao from './setores/fiscalizacao.js?v=1789146756';
-import * as carteira from './setores/carteira.js?v=1789146756';
-import * as estatistica from './setores/estatistica.js?v=1789146756';
+import { sessao, login, logout, fetchCarteira } from './api.js?v=1789161785';
+import { diasDesde, filaDoDia, esc } from './logic.js?v=1789161785';
+import { toast, abrirDialogo, invocar, aoEnfileirar } from './ui.js?v=1789161785';
+import * as painel from './setores/painel.js?v=1789161785';
+import * as diario from './setores/diario.js?v=1789161785';
+import * as redacao from './setores/redacao.js?v=1789161785';
+import * as expedicao from './setores/expedicao.js?v=1789161785';
+import * as auditoria from './setores/auditoria.js?v=1789161785';
+import * as recepcao from './setores/recepcao.js?v=1789161785';
+import * as cobranca from './setores/cobranca.js?v=1789161785';
+import * as garimpo from './setores/garimpo.js?v=1789161785';
+import * as fiscalizacao from './setores/fiscalizacao.js?v=1789161785';
+import * as carteira from './setores/carteira.js?v=1789161785';
+import * as estatistica from './setores/estatistica.js?v=1789161785';
 
 const $ = (s) => document.querySelector(s);
 

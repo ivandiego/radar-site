@@ -1,13 +1,13 @@
 // Tela Recepção (entrega 4, spec §5): o que chegou (WA/OLX), áudios, quem falou por último;
 // Varrer agora · Escanear QR · Ignorar · Ver o diário.
-import { fila } from '../api.js?v=1789146756';
-import { esc } from '../logic.js?v=1789146756';
-import { faixaDoSetor } from '../painel.js?v=1789146756';
-import { chegadasDaRecepcao, contextoDaConversa, pedidoDeResposta } from '../recepcao.js?v=1789146756';
-import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js?v=1789146756';
-import { conversaOrdenada } from '../ficha.js?v=1789146756';
-import { toast, abrirDialogo, invocar } from '../ui.js?v=1789146756';
-import { faixa } from './faixa.js?v=1789146756';
+import { fila } from '../api.js?v=1789161785';
+import { esc } from '../logic.js?v=1789161785';
+import { faixaDoSetor } from '../painel.js?v=1789161785';
+import { chegadasDaRecepcao, contextoDaConversa, pedidoDeResposta } from '../recepcao.js?v=1789161785';
+import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js?v=1789161785';
+import { conversaOrdenada } from '../ficha.js?v=1789161785';
+import { toast, abrirDialogo, invocar } from '../ui.js?v=1789161785';
+import { faixa } from './faixa.js?v=1789161785';
 
 let dados = null, painel = null;
 export async function carregar() { [dados, painel] = await Promise.all([fila('recepcao_listar'), fila('painel')]); }

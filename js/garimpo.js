@@ -1,5 +1,5 @@
 // Garimpo (entrega 4, spec §2/§5): view-model PURO. Sem DOM. Testado em tests/garimpo.test.mjs.
-import { alvosVivos, metaAlvosDe, comissaoDe, pessoaAtiva } from './logic.js?v=1789146756';
+import { alvosVivos, metaAlvosDe, comissaoDe, pessoaAtiva } from './logic.js?v=1789161785';
 const fmt = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: tz }).replace(',', '');
 export function ordensDoGarimpo(itens, tz = 'UTC') {
   return (itens || []).map((o) => ({ id: o.id, estado: o.estado, pessoa_nome: o.pessoa_nome || '', meta: o.meta, resultado: o.resultado || '', hora: fmt(o.executado_em || o.criado_em, tz), cancelavel: o.estado === 'pendente' }));

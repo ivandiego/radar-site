@@ -1,8 +1,8 @@
 // Tela Redação (entrega 2, spec §5): rascunhos pendentes agrupados por pessoa,
 // com o que ela disse; Aprovar · Editar e aprovar · Rejeitar (motivo → diário).
-import { fila } from '../api.js?v=1789146756';
-import { esc } from '../logic.js?v=1789146756';
-import { gruposDaRedacao } from '../redacao.js?v=1789146756';
+import { fila } from '../api.js?v=1789161785';
+import { esc } from '../logic.js?v=1789161785';
+import { gruposDaRedacao } from '../redacao.js?v=1789161785';
 
 let dados = null;
 export async function carregar() { dados = await fila('redacao_listar'); }
