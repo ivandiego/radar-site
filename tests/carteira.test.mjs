@@ -38,3 +38,21 @@ test('mesmo par com 2 lados-imóvel: fica o primeiro (1 alvo por par)', () => {
   const c = montarCarteira(pessoas, lados, pares, ladosDosPares, imoveis);
   assert.equal(c.find((x) => x.pessoa.id === 'm1').pares.find((x) => x.par.id === 'p1').imovel.id, 'i1');
 });
+
+import { perguntaDasMensagens, idsDaEscolha } from '../js/carteira.js';
+const msgs = [{ id: 'a', texto: 'oi', criado_em: '2026-09-10T13:00:00Z' }, { id: 'b', texto: 'tem permuta?', criado_em: '2026-09-10T13:01:00Z' }, { id: 'c', texto: 'e o valor?', criado_em: '2026-09-10T15:00:00Z' }];
+test('F4.20 perguntaDasMensagens: lista numerada com hora, pra o Ivan escolher o que a resposta cobre', () => {
+  const t = perguntaDasMensagens(msgs, 'UTC');
+  assert.ok(t.includes('1) 10/09 13:00 “oi”') && t.includes('3) 10/09 15:00 “e o valor?”'), t);
+  assert.ok(/todas/.test(t) && /nenhuma/.test(t));
+});
+test('F4.20 idsDaEscolha: números, "todas", "nenhuma"; número que não existe é recusado; cancelar = null', () => {
+  assert.deepEqual(idsDaEscolha(msgs, '1, 3'), { ok: true, ids: ['a', 'c'] });
+  assert.deepEqual(idsDaEscolha(msgs, '2 3 2'), { ok: true, ids: ['b', 'c'] });
+  assert.deepEqual(idsDaEscolha(msgs, 'todas'), { ok: true, ids: ['a', 'b', 'c'] });
+  assert.deepEqual(idsDaEscolha(msgs, 'nenhuma'), { ok: true, ids: [] });
+  assert.deepEqual(idsDaEscolha(msgs, ''), { ok: true, ids: [] });
+  assert.equal(idsDaEscolha(msgs, '4').ok, false);
+  assert.equal(idsDaEscolha(msgs, 'x').ok, false);
+  assert.equal(idsDaEscolha(msgs, null), null);
+});

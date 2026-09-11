@@ -27,3 +27,11 @@ test('vazio: sem grupos, sem linhas', () => {
   assert.deepEqual(gruposDaRedacao({}), []);
   assert.deepEqual(linhasDaExpedicao({}), { enviadas: [], falhas: [] });
 });
+
+test('F4.20 gruposDaRedacao: mensagem que chegou DEPOIS do rascunho vira aviso no rascunho (hora curta)', () => {
+  const g = gruposDaRedacao({ grupos: [{ destino: 'd', rotulo: 'EWS', canal: 'whatsapp', recebida: { texto: 'alô?', hora: '2026-09-03T18:00:00Z' },
+    rascunhos: [{ id: 'f1', texto: 'Bom dia', criado_em: '2026-09-03T14:11:00Z', origem: 'relogios', estado: 'pendente_aprovacao', duplicado_de: null, chegou_depois: { texto: 'alô?', hora: '2026-09-03T18:00:00Z' } },
+                { id: 'f2', texto: 'Oi', criado_em: '2026-09-03T19:00:00Z', origem: 'pensador', estado: 'pendente_aprovacao', duplicado_de: null, chegou_depois: null }] }] }, agora);
+  assert.deepEqual(g[0].rascunhos[0].chegouDepois, { texto: 'alô?', hora: '03/09 18:00' });
+  assert.equal(g[0].rascunhos[1].chegouDepois, null);
+});
