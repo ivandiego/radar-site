@@ -1,7 +1,7 @@
 // Tela Diário de um setor (entrega 1): ações uma a uma, hora, texto real, Abrir prova.
-import { fila } from '../api.js';
-import { esc } from '../logic.js';
-import { ROTULOS_SETOR, rotuloTipo } from '../painel.js';
+import { fila } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789143250';
+import { ROTULOS_SETOR, rotuloTipo } from '../painel.js?v=1789143250';
 
 let setor = 'recepcao', itens = [];
 export function configurar(s) { setor = s; }

@@ -1,10 +1,10 @@
 // Tela Recepção (entrega 4, spec §5): o que chegou (WA/OLX), áudios, quem falou por último;
 // Varrer agora · Escanear QR · Ignorar · Ver o diário.
-import { fila } from '../api.js';
-import { esc } from '../logic.js';
-import { faixaDoSetor } from '../painel.js';
-import { chegadasDaRecepcao } from '../recepcao.js';
-import { faixa } from './faixa.js';
+import { fila } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789143250';
+import { faixaDoSetor } from '../painel.js?v=1789143250';
+import { chegadasDaRecepcao } from '../recepcao.js?v=1789143250';
+import { faixa } from './faixa.js?v=1789143250';
 
 let dados = null, painel = null;
 export async function carregar() { [dados, painel] = await Promise.all([fila('recepcao_listar'), fila('painel')]); }

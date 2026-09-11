@@ -1,10 +1,10 @@
 // Tela Fiscalização (entrega 4, spec §2/§5): violações por gravidade, cada uma com o setor
 // que resolve, Abrir prova e Resolvida; resolvidas nas últimas 24h.
-import { fila } from '../api.js';
-import { esc } from '../logic.js';
-import { faixaDoSetor } from '../painel.js';
-import { violacoesAgrupadas, vipsDaAuditoria, rodadasDaAuditoria } from '../fiscalizacao.js';
-import { faixa, abrirProva } from './faixa.js';
+import { fila } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789143250';
+import { faixaDoSetor } from '../painel.js?v=1789143250';
+import { violacoesAgrupadas, vipsDaAuditoria, rodadasDaAuditoria } from '../fiscalizacao.js?v=1789143250';
+import { faixa, abrirProva } from './faixa.js?v=1789143250';
 
 let dados = null, painel = null, aud = null;
 export async function carregar() { [dados, painel, aud] = await Promise.all([fila('fiscalizacao_listar'), fila('painel'), fila('auditoria_listar').catch(() => null)]); }

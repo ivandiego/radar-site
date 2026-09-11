@@ -1,10 +1,10 @@
 // Tela Carteira (entrega 5, spec §2/§5): tabela de VIPs limpa (#carteira) + ficha por VIP (#carteira/<id>).
 // Ações do dono moram aqui: Nova pessoa · Editar ficha · Nota · Dono respondeu · Descartar par · Responder · Garimpar alvos.
-import { sb, fila, fetchCarteira, registrarNoPar } from '../api.js';
-import { esc, aplicarInteracoes, payloadGarimpo, canalDoDestino } from '../logic.js';
-import { linhasDaTabela, reguasDe, fichaDe, conversaOrdenada, patchDaAcao, patchPessoa } from '../ficha.js';
-import { toast, abrirDialogo, invocar } from '../ui.js';
-import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js';
+import { sb, fila, fetchCarteira, registrarNoPar } from '../api.js?v=1789143250';
+import { esc, aplicarInteracoes, payloadGarimpo, canalDoDestino } from '../logic.js?v=1789143250';
+import { linhasDaTabela, reguasDe, fichaDe, conversaOrdenada, patchDaAcao, patchPessoa } from '../ficha.js?v=1789143250';
+import { toast, abrirDialogo, invocar } from '../ui.js?v=1789143250';
+import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js?v=1789143250';
 
 const TZ = 'America/Sao_Paulo';
 const $ = (s) => document.querySelector(s);

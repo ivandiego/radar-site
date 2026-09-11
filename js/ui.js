@@ -1,6 +1,6 @@
 // UI comum (entrega 5): toast, diálogo de texto e chamada das edge functions de IA.
-import { sessao } from './api.js';
-import { FUNCTIONS_URL } from './config.js';
+import { sessao } from './api.js?v=1789143250';
+import { FUNCTIONS_URL } from './config.js?v=1789143250';
 const $ = (s) => document.querySelector(s);
 export function toast(msg, err = false) {
   const t = $('#toast');

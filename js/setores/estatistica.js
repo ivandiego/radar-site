@@ -1,9 +1,9 @@
 // Tela Estatística (F4.10, 07/09): números das abordagens calculados por script a cada rodada da auditoria
 // (estatistica_rodada). Taxa de resposta por canal, tempo até responder, sondagens com uma mensagem só, resposta por
 // frase de abertura, quem está esperando resposta nossa, e a série por rodada. Sem LLM.
-import { fila } from '../api.js';
-import { esc } from '../logic.js';
-import { resumoDe, linhasAbertura, bolaConosco, serieTexto } from '../estatistica.js';
+import { fila } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789143250';
+import { resumoDe, linhasAbertura, bolaConosco, serieTexto } from '../estatistica.js?v=1789143250';
 
 let dados = null;
 export async function carregar() { dados = await fila('estatistica_ultima').catch(() => null); }

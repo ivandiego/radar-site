@@ -1,6 +1,6 @@
 // Painel (entrega 1, spec §4): view-model PURO dos cartões por setor e do
 // bloco "o que NÃO está acontecendo". Sem DOM. Testado em tests/painel.test.mjs.
-import { pessoaAtiva, diasDesde } from './logic.js';
+import { pessoaAtiva, diasDesde } from './logic.js?v=1789143250';
 export const ROTULOS_SETOR = {
   recepcao: { titulo: 'Recepção', quem: 'Coletor + Ouvidor' },
   redacao: { titulo: 'Redação', quem: 'Pensador' },

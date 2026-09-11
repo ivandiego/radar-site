@@ -1,9 +1,9 @@
 // Tela Auditoria (entrega 3, spec §3): escolhe um VIP; o site prova, conversa a
 // conversa (VIP + alvos), que o registro bate com o canal. Conferir agora manda
 // o coletor reler esses chats primeiro; Amostra de 5 é o check-in aleatório.
-import { fila, fetchCarteira } from '../api.js';
-import { esc } from '../logic.js';
-import { arvoreDoVip, montarAuditoria, amostra } from '../auditoria.js';
+import { fila, fetchCarteira } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789143250';
+import { arvoreDoVip, montarAuditoria, amostra } from '../auditoria.js?v=1789143250';
 
 let carteiras = [], escolhido = null, resultado = null;
 export async function carregar() {

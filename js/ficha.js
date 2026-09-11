@@ -1,6 +1,6 @@
 // Carteira (entrega 5, spec §2/§5): view-model PURO da tabela de VIPs e da ficha. Sem DOM.
 // Testado em tests/ficha.test.mjs. Os carimbos no bloqueio seguem o formato que os robôs leem.
-import { pessoaAtiva, paresVivosDe, alvosVivos, metaAlvosDe, comissaoDe, bolaDe, diasDesde, alertasDe } from './logic.js';
+import { pessoaAtiva, paresVivosDe, alvosVivos, metaAlvosDe, comissaoDe, bolaDe, diasDesde, alertasDe } from './logic.js?v=1789143250';
 const OLX = /^https:\/\/(www\.|sp\.)?olx\.com\.br\//;
 const fmtHora = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: tz }).replace(',', '');
 const linkOlx = (u) => (OLX.test(u || '') ? u : null);
