@@ -1,5 +1,5 @@
 // Tela Expedição (entrega 2, spec §5): enviadas com prova; falhas com o erro,
-// Tentar de novo · Mandei eu mesmo · Abrir prova.
+// Tentar de novo · Mandei eu mesmo · Abrir prova. 11/09: na fila pra sair (aprovadas) com Recolher.
 import { fila } from '../api.js?v=1789146756';
 import { esc } from '../logic.js?v=1789146756';
 import { linhasDaExpedicao } from '../redacao.js?v=1789146756';
@@ -16,9 +16,16 @@ async function abrirProva(id) {
   } catch (e) { alert('Não consegui abrir a prova: ' + e.message); }
 }
 export function render(el) {
-  const { enviadas, falhas } = linhasDaExpedicao(dados || {}, 'America/Sao_Paulo');
+  const { enviadas, falhas, aprovadas } = linhasDaExpedicao(dados || {}, 'America/Sao_Paulo');
   el.innerHTML = `
-    <div class="faixa-setor"><h2>Expedição</h2><span>Carteiro</span><span>${enviadas.length} enviadas (48h) · ${falhas.length} falha${falhas.length === 1 ? '' : 's'} esperando você (ficam até você decidir)</span></div>
+    <div class="faixa-setor"><h2>Expedição</h2><span>Carteiro</span><span>${aprovadas.length} na fila pra sair · ${enviadas.length} enviadas (48h) · ${falhas.length} falha${falhas.length === 1 ? '' : 's'} esperando você (ficam até você decidir)</span></div>
+    <div class="aprovadas"><h3>Na fila pra sair</h3>
+      ${aprovadas.length ? `<ul>${aprovadas.map((a) => `
+        <li data-fid="${esc(a.id)}"><b>${esc(a.rotulo)}</b> <small>${esc(a.canal)} · aprovada ${a.hora}</small>
+          <div class="texto">${esc(a.texto)}</div>
+          <div class="acoes"><button class="recolher">Recolher</button> <small>volta pra Redação (editar ou rejeitar lá)</small></div>
+        </li>`).join('')}</ul>` : '<p>nada aprovado esperando o Carteiro</p>'}
+    </div>
     <div class="falhas"><h3>Falhas de envio</h3>
       ${falhas.length ? `<ul>${falhas.map((f) => `
         <li data-fid="${esc(f.id)}"><b>${esc(f.rotulo)}</b> <small>${esc(f.canal)} · ${f.hora}</small>
@@ -42,6 +49,12 @@ export function render(el) {
       const motivo = prompt('Motivo em uma linha (vai pro diário e ensina o Pensador):');
       if (motivo === null) return;
       try { await fila('rejeitar', { id, motivo }); await recarregar(); } catch (e) { alert('Não consegui rejeitar: ' + e.message); }
+    });
+  });
+  // 11/09: recolher só funciona enquanto está 'aprovada' — se o Carteiro já pegou, o servidor recusa e a tela diz por quê
+  el.querySelectorAll('.aprovadas li').forEach((li) => {
+    li.querySelector('button.recolher').addEventListener('click', async () => {
+      try { await fila('recolher', { id: li.dataset.fid }); await recarregar(); } catch (e) { alert('Não consegui recolher: ' + e.message); }
     });
   });
   el.querySelectorAll('.enviadas button.abrir-prova').forEach((b) => b.addEventListener('click', () => abrirProva(b.closest('li').dataset.fid)));

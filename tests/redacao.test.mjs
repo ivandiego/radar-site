@@ -23,9 +23,15 @@ test('linhasDaExpedicao: enviadas com prova e falhas com erro, horas curtas', ()
   assert.equal(l.enviadas[0].hora, '01/09 22:58'); assert.equal(l.enviadas[0].prova, 'whats 22:58 trecho');
   assert.equal(l.falhas[0].rotulo, 'Maracanã'); assert.ok(l.falhas[0].erro.includes('nao reconhece'));
 });
+// 11/09: aprovada errada (Gustavo R3) sem como recolher — a Expedição mostra o que está na fila pra sair, com Recolher
+test('linhasDaExpedicao: aprovadas na fila pra sair, pela hora da aprovação', () => {
+  const l = linhasDaExpedicao({ aprovadas: [{ id: 'a1', destino: '5513997835820', destino_rotulo: 'Gustavo (R3)', canal: 'whatsapp', texto: 'Gustavo, aqui é o Ivan', aprovado_em: '2026-09-11T19:10:00Z', criado_em: '2026-09-11T09:20:00Z' }] }, 'America/Sao_Paulo');
+  assert.equal(l.aprovadas.length, 1); assert.equal(l.aprovadas[0].id, 'a1');
+  assert.equal(l.aprovadas[0].rotulo, 'Gustavo (R3)'); assert.equal(l.aprovadas[0].hora, '11/09 16:10');
+});
 test('vazio: sem grupos, sem linhas', () => {
   assert.deepEqual(gruposDaRedacao({}), []);
-  assert.deepEqual(linhasDaExpedicao({}), { enviadas: [], falhas: [] });
+  assert.deepEqual(linhasDaExpedicao({}), { enviadas: [], falhas: [], aprovadas: [] });
 });
 
 test('F4.20 gruposDaRedacao: mensagem que chegou DEPOIS do rascunho vira aviso no rascunho (hora curta)', () => {
