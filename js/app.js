@@ -2,7 +2,7 @@
 // Toda tela mora em js/setores/<setor>.js ({configurar?, carregar, render}); a lógica pura em módulos testados.
 import { sessao, login, logout, fetchCarteira } from './api.js?v=1789143250';
 import { diasDesde, filaDoDia, esc } from './logic.js?v=1789143250';
-import { toast, abrirDialogo, invocar } from './ui.js?v=1789143250';
+import { toast, abrirDialogo, invocar, aoEnfileirar } from './ui.js?v=1789143250';
 import * as painel from './setores/painel.js?v=1789143250';
 import * as diario from './setores/diario.js?v=1789143250';
 import * as redacao from './setores/redacao.js?v=1789143250';
@@ -70,7 +70,7 @@ $('#resumo-dia').addEventListener('click', resumoDia);
 $('#varrer-agora').addEventListener('click', () => { location.hash = '#recepcao'; }); // a ação mora na Recepção
 $('#novo-cliente').addEventListener('click', () => carteira.abrirNovo());
 $('#ia-fechar').addEventListener('click', () => { $('#ia-dialog').close(); });
-$('#ia-fila').addEventListener('click', () => carteira.enfileirarRascunho($('#ia-texto').value));
+$('#ia-fila').addEventListener('click', () => (aoEnfileirar() || carteira.enfileirarRascunho)($('#ia-texto').value));
 $('#ia-copiar').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('#ia-texto').value);
   toast('Copiado ✔');

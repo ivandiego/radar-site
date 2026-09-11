@@ -7,7 +7,11 @@ export function toast(msg, err = false) {
   t.textContent = msg; t.className = err ? 'err' : ''; t.hidden = false;
   setTimeout(() => { t.hidden = true; }, 3500);
 }
+// 11/09: "+ Fila" chama quem abriu o diálogo (Carteira ou Recepção). mostrarFila = função → é ela que enfileira.
+let enfileirarDoDialogo = null;
+export function aoEnfileirar() { return enfileirarDoDialogo; }
 export function abrirDialogo(titulo, texto, aplicar = null, mostrarFila = false) {
+  enfileirarDoDialogo = typeof mostrarFila === 'function' ? mostrarFila : null;
   $('#ia-fila').hidden = !mostrarFila;
   $('#ia-titulo').textContent = titulo;
   $('#ia-texto').value = texto;

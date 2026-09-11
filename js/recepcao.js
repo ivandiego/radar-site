@@ -15,9 +15,28 @@ export function chegadasDaRecepcao(payload, tz = 'UTC') {
   const itens = chegadas.map((c) => {
     const k = chave(c.destino);
     const nossa = ultimaEnviada.has(k) && ultimaEnviada.get(k) > ultimaRecebida.get(k);
-    return { id: c.id, canal: c.canal, remetente: c.remetente || c.destino, anuncio: c.anuncio || '', texto: c.texto || '', ehAudio: /^\[AUDIO/i.test(c.texto || ''), hora_canal: fmt(horaCanal(c.hora_olx), tz), hora_registro: fmt(c.criado_em, tz), estado: c.estado, ultimaPalavra: nossa ? 'nossa' : 'deles' };
+    return { id: c.id, canal: c.canal, destino: c.destino, remetente: c.remetente || c.destino, anuncio: c.anuncio || '', texto: c.texto || '', ehAudio: /^\[AUDIO/i.test(c.texto || ''), hora_canal: fmt(horaCanal(c.hora_olx), tz), hora_registro: fmt(c.criado_em, tz), estado: c.estado, ultimaPalavra: nossa ? 'nossa' : 'deles' };
   });
   const resumo = { novas: itens.filter((i) => i.estado === 'nova').length, audios: itens.filter((i) => i.ehAudio).length, whatsapp: itens.filter((i) => i.canal === 'whatsapp').length, olx: itens.filter((i) => i.canal === 'olx').length };
   const ordens = ((payload && payload.ordens) || []).map((o) => ({ id: o.id, estado: o.estado, rotulo: o.telefones && o.telefones.length ? 'CONFERIR' : /PROFUNDA/i.test(o.instrucao || '') ? 'PROFUNDA' : 'Varredura', resultado: o.resultado || '', hora: fmt(o.executado_em || o.criado_em, tz) }));
   return { itens, resumo, ordens };
+}
+
+// Responder na Recepção (11/09): responder uma conversa que NÃO está ligada a um par da Carteira (anunciante que o
+// Relógios/garimpo abriu pelo WhatsApp). Canal e destino vêm da própria mensagem (identidade pelo registro, regra 4);
+// o contexto avisa o modelo que não há par — ele não inventa cliente, imóvel nem valor.
+export function contextoDaConversa(item, abertas, historico, tz = 'America/Sao_Paulo') {
+  const linhas = (abertas || []).map((m) => `${fmt(m.criado_em, tz)} “${String(m.texto || '').slice(0, 300)}”`);
+  const hist = (historico || []).map((h) => `${h.quando} ${h.quem}: ${String(h.texto || '').slice(0, 200)}`);
+  return `CONVERSA COM: ${item.remetente} (${item.canal})${item.anuncio ? ' — anúncio: ' + item.anuncio : ''}.
+ATENÇÃO: esta pessoa não está ligada a um par da carteira no site. Não invente cliente, imóvel, valor nem prazo; se ela
+perguntar da permuta ou do nosso imóvel, peça o que falta ou diga que o Ivan confirma os dados.
+MENSAGENS DELA SEM RESPOSTA (mais antiga primeiro):
+${linhas.join('\n') || '(nenhuma aberta)'}
+${hist.length ? 'HISTÓRICO RECENTE:\n' + hist.join('\n') : ''}`;
+}
+export function pedidoDeResposta(item, texto, ids) {
+  const t = String(texto || '').trim();
+  if (!t) return null;
+  return { canal: item.canal, destino: item.destino, destino_rotulo: item.remetente, texto: t, origem: 'site', responde_ids: ids || [] };
 }

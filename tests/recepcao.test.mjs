@@ -22,3 +22,23 @@ test('chegadasDaRecepcao: ordem PROFUNDA e varredura simples rotuladas', () => {
   const r = chegadasDaRecepcao({ ordens: [{ id: 'a', estado: 'pendente', instrucao: 'varredura PROFUNDA', criado_em: '2026-09-04T11:00:00Z' }, { id: 'b', estado: 'pendente', criado_em: '2026-09-04T11:00:00Z' }] }, 'UTC');
   assert.deepEqual(r.ordens.map((o) => o.rotulo), ['PROFUNDA', 'Varredura']);
 });
+
+import { contextoDaConversa, pedidoDeResposta } from '../js/recepcao.js';
+test('Responder na Recepção: o item traz o destino da mensagem (identidade pelo registro, nada digitado)', () => {
+  const { itens } = chegadasDaRecepcao(payload, 'UTC');
+  assert.equal(itens[0].destino, '5511949564957');
+});
+test('contextoDaConversa: quem, canal, sem par (não inventar cliente/imóvel/valor), mensagens abertas e histórico', () => {
+  const t = contextoDaConversa({ remetente: 'Janette', canal: 'whatsapp', anuncio: '' },
+    [{ texto: 'Bom dia Ivan', criado_em: '2026-09-11T14:07:00Z' }, { texto: 'Estou ligando pra saber sobre o seu imóvel', criado_em: '2026-09-11T14:07:30Z' }],
+    [{ quando: '10/09 11:15', quem: 'nós', texto: 'Oi Janette, o interesse no apto continua' }], 'UTC');
+  assert.ok(t.includes('Janette') && t.includes('whatsapp'));
+  assert.ok(/não está ligad[ao] a um par/i.test(t) && /não invente/i.test(t), t);
+  assert.ok(t.includes('11/09 14:07 “Estou ligando pra saber sobre o seu imóvel”'), t);
+  assert.ok(t.includes('10/09 11:15 nós: Oi Janette'), t);
+});
+test('pedidoDeResposta: canal e destino da mensagem, rótulo = remetente, origem site, só os ids escolhidos', () => {
+  assert.deepEqual(pedidoDeResposta({ canal: 'whatsapp', destino: '5513996037761', remetente: 'Janette' }, ' Oi Janette! ', ['a', 'b']),
+    { canal: 'whatsapp', destino: '5513996037761', destino_rotulo: 'Janette', texto: 'Oi Janette!', origem: 'site', responde_ids: ['a', 'b'] });
+  assert.equal(pedidoDeResposta({ canal: 'whatsapp', destino: 'x', remetente: 'y' }, '   ', []), null);
+});

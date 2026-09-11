@@ -3,7 +3,10 @@
 import { fila } from '../api.js?v=1789143250';
 import { esc } from '../logic.js?v=1789143250';
 import { faixaDoSetor } from '../painel.js?v=1789143250';
-import { chegadasDaRecepcao } from '../recepcao.js?v=1789143250';
+import { chegadasDaRecepcao, contextoDaConversa, pedidoDeResposta } from '../recepcao.js?v=1789143250';
+import { perguntaDasMensagens, idsDaEscolha } from '../carteira.js?v=1789143250';
+import { conversaOrdenada } from '../ficha.js?v=1789143250';
+import { toast, abrirDialogo, invocar } from '../ui.js?v=1789143250';
 import { faixa } from './faixa.js?v=1789143250';
 
 let dados = null, painel = null;
@@ -24,7 +27,7 @@ export function render(el) {
       ${itens.length ? `<table class="chegadas"><tr><th>quem</th><th>canal</th><th>mensagem</th><th>hora no canal</th><th>registrada</th><th>última palavra</th><th></th></tr>${itens.map((i) => `
         <tr data-mid="${esc(i.id)}" class="${esc(i.estado)}"><td><b>${esc(i.remetente)}</b>${i.anuncio ? `<br><small>${esc(i.anuncio.slice(0, 50))}</small>` : ''}</td><td>${esc(i.canal)}</td>
           <td>${i.ehAudio ? '🎧 ' : ''}${esc(i.texto.slice(0, 200))}</td><td>${i.hora_canal}</td><td>${i.hora_registro}</td><td>${i.ultimaPalavra}</td>
-          <td>${i.estado === 'nova' ? '<button class="ignorar">Ignorar</button>' : esc(i.estado)}</td></tr>`).join('')}</table>` : '<p>nada chegou nas últimas 48h</p>'}
+          <td>${i.estado === 'nova' ? '<button class="responder">Responder</button><button class="ignorar">Ignorar</button>' : i.estado === 'em_rascunho' ? esc(i.estado) + ' <button class="responder">Responder</button>' : esc(i.estado)}</td></tr>`).join('')}</table>` : '<p>nada chegou nas últimas 48h</p>'}
     </div>`;
   const recarregar = async () => { await carregar(); render(el); };
   el.querySelector('button.varrer').addEventListener('click', async () => {
@@ -36,8 +39,34 @@ export function render(el) {
     document.querySelector('#ia-fila').hidden = true; document.querySelector('#ia-aplicar').hidden = true;
     document.querySelector('#ia-dialog').showModal();
   });
+  el.querySelectorAll('button.responder').forEach((b) => b.addEventListener('click', () => responder(itens.find((x) => x.id === b.closest('tr').dataset.mid))));
   el.querySelectorAll('button.ignorar').forEach((b) => b.addEventListener('click', async () => {
     const id = b.closest('tr').dataset.mid;
     try { await fila('inbox_marcar', { id, estado: 'ignorada' }); await recarregar(); } catch (e) { alert(e.message); }
   }));
+}
+
+// Responder na Recepção (11/09): rascunho pra conversa sem par na Carteira. Vai pra Redação (✔ do Ivan), nunca sai direto.
+async function responder(item) {
+  if (!item) return;
+  toast('Redigindo…');
+  try {
+    const cx = await fila('caixa_da_conversa', { canal: item.canal, destino: item.destino });
+    const abertas = cx.mensagens || [];
+    const hist = item.canal === 'whatsapp' ? conversaOrdenada(await fila('conversa_recente', { telefone: item.destino }), 'America/Sao_Paulo') : [];
+    const { texto } = await invocar('redigir', { tipo: 'resposta', contexto: contextoDaConversa(item, abertas, hist) });
+    abrirDialogo('Rascunho para ' + item.remetente + ' — revise antes de mandar pra Redação', texto, null, (t) => enfileirar(item, abertas, t));
+  } catch (e) { toast('Não consegui redigir: ' + e.message, true); }
+}
+async function enfileirar(item, abertas, texto) {
+  let ids = [];
+  if (abertas.length) {
+    let escolha = idsDaEscolha(abertas, prompt(perguntaDasMensagens(abertas), 'todas'));
+    while (escolha && !escolha.ok) escolha = idsDaEscolha(abertas, prompt(escolha.erro + '\n\n' + perguntaDasMensagens(abertas), 'todas'));
+    if (!escolha) return;
+    ids = escolha.ids;
+  }
+  const pedido = pedidoDeResposta(item, texto, ids);
+  if (!pedido) { toast('Texto vazio.', true); return; }
+  try { await fila('criar', pedido); document.querySelector('#ia-dialog').close(); toast('Na fila ✔ — aprove na Redação'); } catch (e) { toast(e.message, true); }
 }
