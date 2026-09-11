@@ -243,6 +243,20 @@ def main():
         page.wait_for_selector('#setor table.chegadas tr[data-mid]')
         ok("Coletor + Ouvidor" in page.inner_text('#setor .faixa-setor'), "recepção: faixa comum com quem trabalha")
         ok("Posso te ligar?" in page.inner_text('#setor') and "03/09 09:27" in page.inner_text('#setor'), "recepção: mensagem com hora do canal")
+        # Responder na Recepção: destino vem da mensagem; + Fila pergunta o que o texto cobre e cria na Redação
+        respostas_rec = iter(["1"])
+        def responde_rec(d):
+            d.accept(next(respostas_rec, ""))
+        page.on("dialog", responde_rec)
+        page.click('#setor table.chegadas tr[data-mid="m1"] button.responder')
+        page.wait_for_selector('#ia-dialog[open] #ia-fila:not([hidden])', timeout=4000)
+        ok("Oi, tudo bem?" in page.input_value('#ia-texto'), "recepção: Responder abre o rascunho redigido")
+        page.click('#ia-fila')
+        page.wait_for_timeout(800)
+        page.remove_listener("dialog", responde_rec)
+        c = payloads.get("criar") or {}
+        ok(c.get("destino") == "5511949564957" and c.get("origem") == "site" and c.get("responde_ids") == ["m-a"],
+           f"recepção: Responder cria o rascunho para o destino da mensagem, com o que o texto cobre ({c})")
         page.once("dialog", lambda d: d.accept())
         page.click('#setor button.varrer')
         page.wait_for_timeout(300)
