@@ -1,8 +1,8 @@
 // Tela Expedição (entrega 2, spec §5): enviadas com prova; falhas com o erro,
 // Tentar de novo · Mandei eu mesmo · Abrir prova.
-import { fila } from '../api.js?v=1789143250';
-import { esc } from '../logic.js?v=1789143250';
-import { linhasDaExpedicao } from '../redacao.js?v=1789143250';
+import { fila } from '../api.js?v=1789146756';
+import { esc } from '../logic.js?v=1789146756';
+import { linhasDaExpedicao } from '../redacao.js?v=1789146756';
 
 let dados = null;
 export async function carregar() { dados = await fila('expedicao_listar'); }

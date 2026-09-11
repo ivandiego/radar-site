@@ -1,5 +1,5 @@
 // Fiscalização (entrega 4, spec §2/§5): view-model PURO. Sem DOM. Testado em tests/fiscalizacao.test.mjs.
-import { ROTULOS_SETOR } from './painel.js?v=1789143250';
+import { ROTULOS_SETOR } from './painel.js?v=1789146756';
 const fmt = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: tz }).replace(',', '');
 const SETOR_DO_TIPO = {
   caixa_apodrecendo: 'redacao', respondida_sem_resposta: 'redacao', decisao_esquecida: 'redacao', ignorada_suspeita: 'redacao',

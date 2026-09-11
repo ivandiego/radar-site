@@ -1,6 +1,6 @@
 // Faixa comum das telas de setor (entrega 4, spec §2): quem trabalha · última rodada · o que fez · travado.
-import { esc } from '../logic.js?v=1789143250';
-import { fila } from '../api.js?v=1789143250';
+import { esc } from '../logic.js?v=1789146756';
+import { fila } from '../api.js?v=1789146756';
 export function faixa(f, setor) {
   return `<div class="faixa-setor ${f.estado}"><h2>${esc(f.titulo)}</h2><span>${esc(f.quem)}</span><span>${f.rodada ? `última rodada às <b>${f.rodada}</b>` : 'sem rodada nas últimas 24h'}</span><span>${esc(f.fez)}</span>${f.travado.map((t) => `<span class="travado">travado: ${esc(t)}</span>`).join('')}<a class="ver-diario" href="#diario/${setor}">Ver o diário</a></div>`;
 }

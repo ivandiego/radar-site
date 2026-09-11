@@ -1,10 +1,10 @@
 // Tela Cobrança (entrega 4, spec §5): promessas nossas/deles (vencidas primeiro);
 // Cumprida · Renegociar (prazo novo) · Lembrar agora (rotina) · petecas cobradas com prova.
-import { fila } from '../api.js?v=1789143250';
-import { esc } from '../logic.js?v=1789143250';
-import { faixaDoSetor } from '../painel.js?v=1789143250';
-import { blocosDaCobranca } from '../cobranca.js?v=1789143250';
-import { faixa, abrirProva } from './faixa.js?v=1789143250';
+import { fila } from '../api.js?v=1789146756';
+import { esc } from '../logic.js?v=1789146756';
+import { faixaDoSetor } from '../painel.js?v=1789146756';
+import { blocosDaCobranca } from '../cobranca.js?v=1789146756';
+import { faixa, abrirProva } from './faixa.js?v=1789146756';
 
 let dados = null, painel = null;
 export async function carregar() { [dados, painel] = await Promise.all([fila('cobranca_listar'), fila('painel')]); }
