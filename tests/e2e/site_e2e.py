@@ -116,7 +116,9 @@ FILA = {
     "aprovar_editado": {"item": {"id": "f1", "estado": "aprovada"}},
     "rejeitar": {"item": {"id": "f2", "estado": "rejeitada"}},
     "expedicao_listar": {"enviadas": [{"id": "e1", "destino_rotulo": "Vitor", "canal": "whatsapp", "texto": "Boa noite Vitor", "enviado_em": "2026-09-01T22:58:00Z", "prova_envio": "whats 22:58 trecho"}],
-                         "falhas": [{"id": "x1", "destino": "5513981780293", "destino_rotulo": "Maracanã", "canal": "whatsapp", "texto": "Oi, Ivan…", "erro": "WhatsApp Web nao reconhece", "criado_em": "2026-09-02T23:00:00Z"}]},
+                         "falhas": [{"id": "x1", "destino": "5513981780293", "destino_rotulo": "Maracanã", "canal": "whatsapp", "texto": "Oi, Ivan…", "erro": "WhatsApp Web nao reconhece", "criado_em": "2026-09-02T23:00:00Z"}],
+                         "aprovadas": [{"id": "a1", "destino": "5513997835820", "destino_rotulo": "Gustavo (R3)", "canal": "whatsapp", "texto": "Gustavo, aqui é o Ivan", "aprovado_em": "2026-09-11T19:10:00Z"}]},
+    "recolher": {"item": {"id": "a1", "estado": "pendente_aprovacao"}},
     "tentar_de_novo": {"item": {"id": "x1", "estado": "aprovada"}},
     "caixa_da_conversa": {"canal": "whatsapp", "destino": "5513999990001", "mensagens": [
         {"id": "m-a", "texto": "tem permuta?", "criado_em": "2026-09-10T13:00:00Z", "estado": "nova"},
@@ -374,6 +376,11 @@ def main():
         page.click('#setor .falhas li button.rejeitar')
         page.wait_for_timeout(300)
         ok(acoes_fila.count("rejeitar") == antes + 1 and payloads["rejeitar"].get("id") == "x1", "expedição: F4.20 Rejeitar a falha (libera a conversa)")
+        # 11/09: aprovada errada (Gustavo R3) — Recolher tira da fila antes do Carteiro, sem banco na mão
+        ok("Gustavo (R3)" in page.inner_text('#setor .aprovadas') and "1 na fila pra sair" in page.inner_text('#setor .faixa-setor'), "expedição: aprovadas na fila pra sair")
+        page.click('#setor .aprovadas li button.recolher')
+        page.wait_for_timeout(300)
+        ok("recolher" in acoes_fila and payloads["recolher"].get("id") == "a1", "expedição: Recolher manda a aprovada de volta pra Redação")
         page.click('#setores a[href="#painel"]')
         page.wait_for_selector('#setor .cartao-setor')
         page.click('#setor .cartao-setor[data-setor="recepcao"] a.ver-diario')
