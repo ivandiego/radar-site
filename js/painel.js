@@ -14,6 +14,7 @@ const TIPOS = {
   chat_lido: ['chat lido', 'chats lidos'], recebida: ['recebida', 'recebidas'],
   rascunho_liberado: ['rascunho liberado', 'rascunhos liberados'], rascunho_decisao: ['rascunho pra você decidir', 'rascunhos pra você decidir'],
   rejeitado: ['rejeitado', 'rejeitados'], ignorada: ['ignorada', 'ignoradas'],
+  falha_abrir: ['falha ao abrir', 'falhas ao abrir'],
   enviada: ['enviada', 'enviadas'], falhou: ['falha de envio', 'falhas de envio'],
   promessa_nossa: ['promessa nossa', 'promessas nossas'], promessa_deles: ['promessa deles', 'promessas deles'], cumprida: ['cumprida', 'cumpridas'], renegociada: ['renegociada', 'renegociadas'],
   ordem_pendente: ['ordem pendente', 'ordens pendentes'], ordem_executando: ['ordem em execução', 'ordens em execução'], ordem_concluida: ['ordem concluída', 'ordens concluídas'], ordem_cancelada: ['ordem cancelada', 'ordens canceladas'],
