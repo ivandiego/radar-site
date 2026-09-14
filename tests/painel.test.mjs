@@ -79,3 +79,15 @@ test('vipsMudos: VIP ativo sem interação há 5+ dias (ou nunca) entra, maior a
   assert.deepEqual(vipsMudos(cs, now), [{ pessoaId: 'd', nome: 'D', dias: null }, { pessoaId: 'a', nome: 'A', dias: 9 }]);
   assert.deepEqual(vipsMudos(cs, now, 10), [{ pessoaId: 'd', nome: 'D', dias: null }]);
 });
+
+// ---- 13/09: falha ao abrir no painel (ficha do Radar 2026-09-12-o-recibo-de-pular-guarda-o-nome, Solução 3) ----
+// A função `fila` passa a emitir o tipo `falha_abrir` para o recibo de falha ao abrir, só com o tipo (o texto do erro
+// carrega nome — decisão do Ivan). Sem rótulo, o tipo aparecia cru ("falha abrir") na linha "fez" e no Diário.
+test('rotuloTipo: falha_abrir tem rótulo de gente, singular e plural', () => {
+  assert.equal(rotuloTipo('falha_abrir', 1), 'falha ao abrir');
+  assert.equal(rotuloTipo('falha_abrir'), 'falhas ao abrir');
+});
+test('cartoesDoPainel: falha_abrir entra no "fez" com o rótulo, ao lado dos chats lidos', () => {
+  const p = { setores: { ...payload.setores, recepcao: { ultima_rodada: '2026-09-13T15:00:00Z', fez: [{ tipo: 'chat_lido', n: 12 }, { tipo: 'falha_abrir', n: 3 }], travado: [] } } };
+  assert.equal(cartoesDoPainel(p)[0].fez, '12 chats lidos · 3 falhas ao abrir');
+});
