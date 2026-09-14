@@ -1,10 +1,10 @@
 // Tela Garimpo (entrega 4, spec §2/§5): régua de meta (VIPs abaixo da meta → Garimpar alvos),
 // ordens (Cancelar ordem), alvos novos com prova.
-import { fila, fetchCarteira } from '../api.js?v=1789161785';
-import { esc, payloadGarimpo } from '../logic.js?v=1789161785';
-import { faixaDoSetor } from '../painel.js?v=1789161785';
-import { ordensDoGarimpo, reguaDeMeta, alvosNovos } from '../garimpo.js?v=1789161785';
-import { faixa, abrirProva } from './faixa.js?v=1789161785';
+import { fila, fetchCarteira } from '../api.js?v=1789348087';
+import { esc, payloadGarimpo } from '../logic.js?v=1789348087';
+import { faixaDoSetor } from '../painel.js?v=1789348087';
+import { ordensDoGarimpo, reguaDeMeta, alvosNovos } from '../garimpo.js?v=1789348087';
+import { faixa, abrirProva } from './faixa.js?v=1789348087';
 
 let ordens = null, diario = null, painel = null, carteiras = [];
 export async function carregar() {

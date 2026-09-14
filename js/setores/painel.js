@@ -1,7 +1,7 @@
 // Tela Painel (entrega 1): cartões por setor com evidências + "não está acontecendo".
-import { fila, fetchCarteira } from '../api.js?v=1789161785';
-import { esc, aplicarInteracoes } from '../logic.js?v=1789161785';
-import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel, vipsMudos } from '../painel.js?v=1789161785';
+import { fila, fetchCarteira } from '../api.js?v=1789348087';
+import { esc, aplicarInteracoes } from '../logic.js?v=1789348087';
+import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel, vipsMudos } from '../painel.js?v=1789348087';
 
 let dados = null, carteiras = [];
 // Entrega 5: a régua "VIP mudo" lê a carteira com a mesma frescura da Carteira (interacoes da caixa)

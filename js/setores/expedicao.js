@@ -1,8 +1,8 @@
 // Tela Expedição (entrega 2, spec §5): enviadas com prova; falhas com o erro,
 // Tentar de novo · Mandei eu mesmo · Abrir prova. 11/09: na fila pra sair (aprovadas) com Recolher.
-import { fila } from '../api.js?v=1789161785';
-import { esc } from '../logic.js?v=1789161785';
-import { linhasDaExpedicao } from '../redacao.js?v=1789161785';
+import { fila } from '../api.js?v=1789348087';
+import { esc } from '../logic.js?v=1789348087';
+import { linhasDaExpedicao } from '../redacao.js?v=1789348087';
 
 let dados = null;
 export async function carregar() { dados = await fila('expedicao_listar'); }
