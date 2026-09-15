@@ -150,6 +150,18 @@ table.diario td.hora { white-space: nowrap; color: var(--tx2); }
 .grupo-redacao .acoes button, .falhas .acoes button { margin-right: 8px; margin-top: 6px; }
 .falhas li, .enviadas li { list-style: none; margin: 8px 0; padding-bottom: 8px; border-bottom: 1px dashed var(--linha); }
 .falhas .erro { color: var(--verm); }
+/* 15/09: fase 1 da régua do rascunho — Liberar conversa, contadores e barradas */
+#liberar-dialog { background: var(--painel); color: var(--tx); border: 1px solid var(--linha); border-radius: 14px; padding: 18px; width: min(94vw, 480px); }
+#liberar-dialog::backdrop { background: rgba(6,8,12,.7); }
+#liberar-dialog h3 { margin-bottom: 10px; font-size: 15px; }
+#liberar-dialog p { margin-bottom: 10px; }
+.contadores-bloqueio { margin-top: 20px; } .contadores-bloqueio ul { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; }
+.contadores-bloqueio li { list-style: none; } .contadores-bloqueio li.nao-sei b { color: var(--amarelo); }
+.nao-acontecendo li.bloqueada button, .aviso-lembrete button { margin-left: 8px; }
+.aviso-lembrete { color: var(--amarelo); margin-top: 6px; }
+.barradas { margin-top: 18px; } .barradas .explica { color: var(--tx2); margin: 4px 0; }
+.barradas li { list-style: none; margin: 8px 0; padding: 0 0 8px 10px; border-left: 3px solid var(--verm); border-bottom: 1px dashed var(--linha); }
+.barradas .motivo { color: var(--verm); }
 
 /* Entrega 3: Auditoria */
 .resumo-aud { margin: 10px 0 14px; }

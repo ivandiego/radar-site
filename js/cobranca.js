@@ -10,3 +10,11 @@ export function blocosDaCobranca(payload, agora = new Date(), tz = 'UTC') {
   const petecas = ((payload && payload.diario) || []).filter((d) => TIPOS_COBRANCA.has(d.tipo)).map((d) => ({ hora: fmt(d.hora, tz), quem: d.pessoa_ref || d.destino || '', texto: d.texto || '', prova_ref: d.prova_ref || null }));
   return { nossas, deles, petecas, resumo: { nossasVencidas: nossas.filter((c) => c.vencida).length, delesVencidas: deles.filter((c) => c.vencida).length } };
 }
+// 15/09 (fase 1 da régua do rascunho, radar-permutas PR 218, peças 12 e 14): o 409 do agenda_lembrar vira mensagem na tela.
+// Conversa bloqueada = {erro, bloqueio: <id>} (antes do insert: prazo e diário intactos) → oferece liberar a conversa.
+export function avisoDoLembrete(e) {
+  const dados = (e && e.dados) || {};
+  if (e && e.status === 409 && dados.bloqueio) return { texto: 'O lembrete não foi criado: a conversa está bloqueada. Libere a conversa ou escreva você mesmo.', bloqueioRef: `bloqueio_conversa:${dados.bloqueio}` };
+  if (e && e.status === 409) return { texto: `O lembrete não foi criado: ${dados.erro || e.message}`, bloqueioRef: null };
+  return { texto: `Não consegui lembrar: ${(e && e.message) || e}`, bloqueioRef: null };
+}

@@ -177,7 +177,10 @@ def main():
     with sync_playwright() as pw:
         page = pw.chromium.launch().new_page()
         page.on("pageerror", lambda e: erros.append(f"pageerror: {e}"))
-        page.on("console", lambda m: m.type == "error" and "net::" not in m.text and erros.append(f"console: {m.text}"))
+        # 15/09: o 409 do lembrete é resposta de propósito do duplo; o Chromium registra todo status != 2xx como
+        # "Failed to load resource" — isso não é erro do site. Só esse texto, só 409, sai do filtro.
+        page.on("console", lambda m: m.type == "error" and "net::" not in m.text
+                and "responded with a status of 409" not in m.text and erros.append(f"console: {m.text}"))
 
         page.route("**://esm.sh/**", lambda r: r.fulfill(content_type="application/javascript", body=STUB_SUPABASE))
         page.route("**://fonts.g**", lambda r: r.abort())

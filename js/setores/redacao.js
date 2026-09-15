@@ -3,9 +3,11 @@
 import { fila } from '../api.js?v=1789348087';
 import { esc } from '../logic.js?v=1789348087';
 import { gruposDaRedacao } from '../redacao.js?v=1789348087';
+import { carregarBarradas, blocoBarradas } from './barradas.js?v=1789348087';
 
-let dados = null;
-export async function carregar() { dados = await fila('redacao_listar'); }
+let dados = null, barradas = { lista: [], erro: null };
+// 15/09 (fase 1 da régua): as barradas aparecem com o motivo, embaixo dos rascunhos
+export async function carregar() { [dados, barradas] = await Promise.all([fila('redacao_listar'), carregarBarradas()]); }
 export function render(el) {
   const grupos = gruposDaRedacao(dados || {}, new Date(), 'America/Sao_Paulo');
   const total = grupos.reduce((n, g) => n + g.rascunhos.length, 0);
@@ -29,7 +31,8 @@ export function render(el) {
               <button class="rejeitar">Rejeitar</button>
             </div>
           </li>`).join('')}</ul>
-      </div>`).join('') : '<p>Nada esperando você. 🎉</p>'}`;
+      </div>`).join('') : '<p>Nada esperando você. 🎉</p>'}
+    ${blocoBarradas(barradas)}`;
   const recarregar = async () => { await carregar(); render(el); };
   el.querySelectorAll('.grupo-redacao li').forEach((li) => {
     const id = li.dataset.fid;
