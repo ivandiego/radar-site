@@ -19,6 +19,9 @@ const TIPOS = {
   promessa_nossa: ['promessa nossa', 'promessas nossas'], promessa_deles: ['promessa deles', 'promessas deles'], cumprida: ['cumprida', 'cumpridas'], renegociada: ['renegociada', 'renegociadas'],
   ordem_pendente: ['ordem pendente', 'ordens pendentes'], ordem_executando: ['ordem em execução', 'ordens em execução'], ordem_concluida: ['ordem concluída', 'ordens concluídas'], ordem_cancelada: ['ordem cancelada', 'ordens canceladas'],
   violacao: ['violação', 'violações'], violacao_resolvida: ['violação resolvida', 'violações resolvidas'],
+  // 15/09 (fase 1 da régua do rascunho, radar-permutas PR 218, peça 16)
+  rascunho_barrado: ['rascunho barrado', 'rascunhos barrados'], conversa_bloqueada: ['conversa bloqueada', 'conversas bloqueadas'],
+  bloqueio_fechado: ['conversa liberada', 'conversas liberadas'],
 };
 export function rotuloTipo(tipo, n = 2) {
   const t = TIPOS[tipo];
@@ -38,7 +41,44 @@ export function cartoesDoPainel(payload, tz = 'UTC') {
 }
 
 export function naoAcontecendo(payload) {
-  return (payload.nao_acontecendo || []).map((x) => ({ ...x, setorTitulo: (ROTULOS_SETOR[x.setor] || {}).titulo || x.setor }));
+  return (payload.nao_acontecendo || []).map((x) => ({ ...x, texto: mascararTelefones(x.texto), liberavel: x.tipo === 'conversa_bloqueada', setorTitulo: (ROTULOS_SETOR[x.setor] || {}).titulo || x.setor }));
+}
+
+// ---- 15/09: fase 1 da régua do rascunho (radar-permutas PR 218, ficha 2026-09-14-rascunho-errado-e-reescrita v13.1) ----
+// Telefone nunca aparece inteiro na tela: 9 pontos + os 4 últimos dígitos (não revela nem o tamanho). Chat-id da OLX fica.
+const PONTOS = '•••••••••';
+export function mascararDestino(d) {
+  const s = String(d ?? '').trim();
+  const dig = s.replace(/\D/g, '');
+  return /^[\d\s()+-]+$/.test(s) && dig.length >= 8 ? PONTOS + dig.slice(-4) : s;
+}
+export function mascararTelefones(texto) {
+  return String(texto ?? '').replace(/\+?\(?\d[\d\s()-]{6,}\d/g, (m) => {
+    const dig = m.replace(/\D/g, '');
+    return dig.length >= 8 && !/^\d{4}-\d{2}-\d{2}$/.test(m) ? PONTOS + dig.slice(-4) : m;
+  });
+}
+// Contadores do painel (peça 16; D14 a). null ou ausente = "não sei" (a peteca não foi lida ou a edge é antiga), nunca 0.
+const CONTADORES = [
+  ['bloqueios_abertos', 'conversas bloqueadas'],
+  ['barradas_repetidas', 'rascunhos repetidos segurados em conversa bloqueada'],
+  ['petecas_excluidas_por_bloqueio', 'petecas que não saíram por conversa bloqueada'],
+  ['petecas_sem_identidade', 'petecas sem identidade completa'],
+  ['peteca_sem_conversa', 'petecas sem conversa conhecida'],
+];
+export function contadoresDoPainel(payload) {
+  const c = (payload && payload.contadores) || {};
+  return CONTADORES.map(([chave, rotulo]) => {
+    const v = c[chave];
+    const sabe = typeof v === 'number' && Number.isFinite(v);
+    return { chave, rotulo, valor: sabe ? String(v) : 'não sei', sabe };
+  });
+}
+// Peça 8: "liberar conversa" chama a edge com {canal, destino}; os dois vêm da linha do bloqueio (prova bloqueio_conversa:<id>).
+export function pedidoDeLiberacao(item) {
+  if (!item || !item.canal || !item.destino_canonico) return { ok: false, erro: 'não achei a conversa desse bloqueio' };
+  if (item.fechado_em) return { ok: false, erro: 'essa conversa já está liberada' };
+  return { ok: true, canal: String(item.canal), destino: String(item.destino_canonico), destinoMascarado: mascararDestino(item.destino_canonico) };
 }
 
 // PR 2 (04/09): alarmes abertos (tipo 'alarme' do diário) — o topo do Painel, em vermelho.

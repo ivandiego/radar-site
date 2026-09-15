@@ -135,7 +135,33 @@ FILA = {
     "prova": {"tabela": "chat_varrido", "item": {"chave": "5513997790904", "rotulo": "Nani", "ultima_msg_vista": "dele(a): Bom dia 200 mil", "varrido_em": "2026-09-03T22:00:00Z"}},
     # F9: frescura derivada da caixa — Mesach falou "agora" pela caixa, não pelo campo do site
     "interacoes": {"por_telefone": {"49564957": {"ultima_recebida": "2100-01-01T00:00:00Z", "ultima_enviada": None, "ultima_palavra": "deles", "texto": "Posso te ligar?"}}},
+    # 15/09 (fase 1 da régua do rascunho, radar-permutas PR 218): liberar_conversa responde {bloqueio: <id>}
+    "liberar_conversa": {"bloqueio": "bl1"},
 }
+
+# 15/09 (fase 1 da régua): o painel da edge nova traz conversa_bloqueada e contadores (null = "não sei", nunca 0)
+FILA["painel"]["nao_acontecendo"].append({"tipo": "conversa_bloqueada", "texto": "5513977002222 bloqueada: liberar ou escrever", "setor": "redacao", "ref": "bloqueio_conversa:bl1"})
+FILA["painel"]["contadores"] = {"bloqueios_abertos": 2, "barradas_repetidas": 0, "petecas_excluidas_por_bloqueio": None, "petecas_sem_identidade": 3, "peteca_sem_conversa": None}
+# promessa deles numa conversa bloqueada: o lembrete dá 409 antes do insert
+FILA["cobranca_listar"]["agenda"].append({"id": "c3", "rotulo": "Rita", "o_que": "pensar na proposta", "prazo": "2026-09-14T15:00:00Z", "quem_deve": "deles", "destino": "5513977002222"})
+PROVAS = {
+    "bloqueio_conversa:bl1": {"tabela": "bloqueio_conversa", "item": {"id": "bl1", "canal": "whatsapp", "destino_canonico": "5513977002222", "fechado_em": None, "motivo": "rejeitado", "gerador": "pensador"}},
+    "mensagem_fila:b1": {"tabela": "mensagem_fila", "item": {"id": "b1", "estado": "barrada", "erro": "REGUA:travessao", "destino": "5513977002222", "texto": "Oi, Rita! Tenho uma casa — quer ver?"}},
+}
+DIARIO_REDACAO = {"itens": [{"setor": "redacao", "tipo": "rascunho_barrado", "hora": "2026-09-15T13:00:00Z", "quem": "5513977002222",
+                             "texto": "5513977002222 → \"Oi, Rita! Tenho uma casa — quer ver?\"", "prova_ref": "mensagem_fila:b1"}]}
+
+
+def resposta_fila(corpo):
+    """(status, corpo) do duplo da edge fila; varia por ref, setor e id só onde o teste precisa."""
+    acao = corpo.get("acao")
+    if acao == "prova" and corpo.get("ref") in PROVAS:
+        return 200, PROVAS[corpo["ref"]]
+    if acao == "diario_listar" and corpo.get("setor") == "redacao":
+        return 200, DIARIO_REDACAO
+    if acao == "agenda_lembrar" and corpo.get("id") == "c3":
+        return 409, {"erro": "conversa bloqueada: liberar ou escrever", "bloqueio": "bl1"}
+    return 200, FILA.get(acao, {"itens": []})
 
 
 def main():
@@ -151,7 +177,10 @@ def main():
     with sync_playwright() as pw:
         page = pw.chromium.launch().new_page()
         page.on("pageerror", lambda e: erros.append(f"pageerror: {e}"))
-        page.on("console", lambda m: m.type == "error" and "net::" not in m.text and erros.append(f"console: {m.text}"))
+        # 15/09: o 409 do lembrete é resposta de propósito do duplo; o Chromium registra todo status != 2xx como
+        # "Failed to load resource" — isso não é erro do site. Só esse texto, só 409, sai do filtro.
+        page.on("console", lambda m: m.type == "error" and "net::" not in m.text
+                and "responded with a status of 409" not in m.text and erros.append(f"console: {m.text}"))
 
         page.route("**://esm.sh/**", lambda r: r.fulfill(content_type="application/javascript", body=STUB_SUPABASE))
         page.route("**://fonts.g**", lambda r: r.abort())
@@ -159,7 +188,8 @@ def main():
         def fila_stub(route):
             corpo = json.loads(route.request.post_data or "{}"); acao = corpo.get("acao")
             acoes_fila.append(acao); payloads[acao] = corpo
-            route.fulfill(content_type="application/json", body=json.dumps(FILA.get(acao, {"itens": []})))
+            status, resp = resposta_fila(corpo)
+            route.fulfill(status=status, content_type="application/json", body=json.dumps(resp))
         page.route("**/functions/v1/fila", fila_stub)
         page.route("**/functions/v1/redigir", lambda r: r.fulfill(content_type="application/json", body=json.dumps({"texto": "Oi, tudo bem? Sobre o valor: 400 mil."})))
 
@@ -347,6 +377,55 @@ def main():
         page.click('#setor .alarmes button.resolver')
         page.wait_for_timeout(500)
         ok("alarme_resolver" in acoes_fila, "painel: Resolvido dispara alarme_resolver")
+
+        # 15/09 (fase 1 da régua do rascunho, radar-permutas PR 218): contadores, conversa_bloqueada e Liberar conversa
+        # sem prompt()/confirm() nativos (travam a automação de navegador) e sem telefone inteiro na tela
+        nativos = []
+        conta_nativo = lambda d: (nativos.append(d.type), d.dismiss())
+        page.on("dialog", conta_nativo)
+        page.wait_for_selector('#setor .contadores-bloqueio li[data-chave]', timeout=4000)
+        ok("não sei" in page.inner_text('#setor .contadores-bloqueio li[data-chave="peteca_sem_conversa"]')
+           and "0" not in page.inner_text('#setor .contadores-bloqueio li[data-chave="peteca_sem_conversa"]'),
+           "painel: contador null aparece como 'não sei', nunca 0")
+        ok("2" in page.inner_text('#setor .contadores-bloqueio li[data-chave="bloqueios_abertos"]'), "painel: contador de conversas bloqueadas com número")
+        ok("•••••••••2222" in page.inner_text('#setor .nao-acontecendo li.bloqueada') and "5513977002222" not in page.inner_text('#setor'),
+           "painel: conversa_bloqueada listada com o telefone mascarado")
+        page.click('#setor .nao-acontecendo li.bloqueada button.liberar')
+        page.wait_for_selector('#liberar-dialog[open]', timeout=4000)
+        ok("•••••••••2222" in page.inner_text('#liberar-dialog') and "5513977002222" not in page.inner_text('#liberar-dialog'),
+           "liberar: diálogo na página mostra o destino mascarado")
+        page.click('#liberar-confirmar')
+        page.wait_for_timeout(500)
+        ok((payloads.get("liberar_conversa") or {}) == {"acao": "liberar_conversa", "canal": "whatsapp", "destino": "5513977002222"},
+           f"liberar: chama liberar_conversa com {{canal, destino}} do bloqueio ({payloads.get('liberar_conversa')})")
+        ok(page.is_hidden('#liberar-dialog') and "Conversa liberada" in page.inner_text('#toast'), "liberar: fecha o diálogo e avisa")
+        page.remove_listener("dialog", conta_nativo)
+        ok(nativos == [], f"liberar: nenhum prompt/confirm/alert nativo ({nativos})")
+
+        # 409 do lembrete: a tela explica e oferece liberar (o confirm de Lembrar agora é o de antes)
+        page.click('#setores a[href="#cobranca"]')
+        page.wait_for_selector('#setor .promessas.deles li[data-cid="c3"]')
+        page.once("dialog", lambda d: d.accept())
+        page.click('#setor .promessas.deles li[data-cid="c3"] button.lembrar')
+        page.wait_for_selector('#setor li[data-cid="c3"] .aviso-lembrete', timeout=4000)
+        ok("conversa está bloqueada" in page.inner_text('#setor li[data-cid="c3"] .aviso-lembrete'), "cobrança: 409 do lembrete vira mensagem clara na tela")
+        antes_lib = acoes_fila.count("liberar_conversa")
+        page.click('#setor li[data-cid="c3"] .aviso-lembrete button.liberar')
+        page.wait_for_selector('#liberar-dialog[open]', timeout=4000)
+        page.click('#liberar-cancelar')
+        page.wait_for_timeout(300)
+        ok(page.is_hidden('#liberar-dialog') and acoes_fila.count("liberar_conversa") == antes_lib, "cobrança: Cancelar fecha o diálogo sem liberar")
+
+        # barrada na Redação e na Expedição, com o motivo, sem esconder e sem telefone inteiro
+        page.click('#setores a[href="#redacao"]')
+        page.wait_for_selector('#setor .barradas li[data-fid="b1"] .motivo', timeout=4000)
+        ok("travessão" in page.inner_text('#setor .barradas li[data-fid="b1"]') and "5513977002222" not in page.inner_text('#setor .barradas'),
+           "redação: barrada aparece com o motivo da régua e o telefone mascarado")
+        page.click('#setores a[href="#expedicao"]')
+        page.wait_for_selector('#setor .barradas li[data-fid="b1"] .motivo', timeout=4000)
+        ok("travessão" in page.inner_text('#setor .barradas li[data-fid="b1"]'), "expedição: barrada aparece com o motivo (não saiu)")
+        page.click('#setores a[href="#painel"]')
+        page.wait_for_selector('#setor .cartao-setor')
 
         # Entrega 2: Redação (contexto + Aprovar/Editar e aprovar/Rejeitar) e Expedição
         page.click('#setores a[href="#redacao"]')

@@ -3,9 +3,11 @@
 import { fila } from '../api.js?v=1789348087';
 import { esc } from '../logic.js?v=1789348087';
 import { linhasDaExpedicao } from '../redacao.js?v=1789348087';
+import { carregarBarradas, blocoBarradas } from './barradas.js?v=1789348087';
 
-let dados = null;
-export async function carregar() { dados = await fila('expedicao_listar'); }
+let dados = null, barradas = { lista: [], erro: null };
+// 15/09 (fase 1 da régua): barrada não sai; a Expedição mostra com o motivo para não parecer que sumiu
+export async function carregar() { [dados, barradas] = await Promise.all([fila('expedicao_listar'), carregarBarradas()]); }
 async function abrirProva(id) {
   try {
     const { tabela, item } = await fila('prova', { ref: 'mensagem_fila:' + id });
@@ -33,6 +35,7 @@ export function render(el) {
           <div class="acoes"><button class="tentar">Tentar de novo</button><button class="manual">Mandei eu mesmo</button><button class="rejeitar">Rejeitar</button></div>
         </li>`).join('')}</ul>` : '<p>nenhuma falha</p>'}
     </div>
+    ${blocoBarradas(barradas)}
     <div class="enviadas"><h3>Enviadas</h3>
       ${enviadas.length ? `<ul>${enviadas.map((e) => `
         <li data-fid="${esc(e.id)}"><b>${esc(e.rotulo)}</b> <small>${esc(e.canal)} · ${e.hora}</small>

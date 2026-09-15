@@ -3,8 +3,9 @@
 import { fila } from '../api.js?v=1789348087';
 import { esc } from '../logic.js?v=1789348087';
 import { faixaDoSetor } from '../painel.js?v=1789348087';
-import { blocosDaCobranca } from '../cobranca.js?v=1789348087';
+import { blocosDaCobranca, avisoDoLembrete } from '../cobranca.js?v=1789348087';
 import { faixa, abrirProva } from './faixa.js?v=1789348087';
+import { abrirLiberar } from './liberar.js?v=1789348087';
 
 let dados = null, painel = null;
 export async function carregar() { [dados, painel] = await Promise.all([fila('cobranca_listar'), fila('painel')]); }
@@ -25,7 +26,21 @@ export function render(el) {
     const ren = li.querySelector('button.renegociar');
     if (ren) ren.addEventListener('click', () => { const novo = prompt('Novo prazo (AAAA-MM-DD):'); if (novo) acao(() => fila('agenda_renegociar', { id, novo_prazo: novo })); });
     const lem = li.querySelector('button.lembrar');
-    if (lem) lem.addEventListener('click', () => { if (confirm('Enfileirar o lembrete de rotina agora? O prazo anda +24h.')) acao(() => fila('agenda_lembrar', { id })); });
+    // 15/09 (fase 1 da régua, peças 12 e 14): o 409 do lembrete (conversa bloqueada, lembrete repetido) fica escrito no item;
+    // no bloqueio, o botão Liberar conversa abre o diálogo da página
+    if (lem) lem.addEventListener('click', async () => {
+      if (!confirm('Enfileirar o lembrete de rotina agora? O prazo anda +24h.')) return;
+      try { await fila('agenda_lembrar', { id }); await recarregar(); } catch (e) { mostrarAviso(li, avisoDoLembrete(e)); }
+    });
   });
+  function mostrarAviso(li, aviso) {
+    li.querySelectorAll('.aviso-lembrete').forEach((x) => x.remove());
+    const div = document.createElement('div');
+    div.className = 'aviso-lembrete';
+    div.innerHTML = `${esc(aviso.texto)}${aviso.bloqueioRef ? ' <button class="liberar">Liberar conversa</button>' : ''}`;
+    li.appendChild(div);
+    const lib = div.querySelector('button.liberar');
+    if (lib) lib.addEventListener('click', () => abrirLiberar(aviso.bloqueioRef, recarregar));
+  }
   el.querySelectorAll('.petecas button.abrir-prova').forEach((b2) => b2.addEventListener('click', () => abrirProva(b2.closest('li').dataset.ref)));
 }

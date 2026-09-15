@@ -1,7 +1,8 @@
 // Tela Painel (entrega 1): cartões por setor com evidências + "não está acontecendo".
 import { fila, fetchCarteira } from '../api.js?v=1789348087';
 import { esc, aplicarInteracoes } from '../logic.js?v=1789348087';
-import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel, vipsMudos } from '../painel.js?v=1789348087';
+import { cartoesDoPainel, naoAcontecendo, alarmesDoPainel, vipsMudos, contadoresDoPainel } from '../painel.js?v=1789348087';
+import { abrirLiberar } from './liberar.js?v=1789348087';
 
 let dados = null, carteiras = [];
 // Entrega 5: a régua "VIP mudo" lê a carteira com a mesma frescura da Carteira (interacoes da caixa)
@@ -18,6 +19,7 @@ export function render(el) {
   const nao = naoAcontecendo(dados || {});
   const alarmes = alarmesDoPainel(dados || {}, 'America/Sao_Paulo');
   const mudos = vipsMudos(carteiras, new Date());
+  const contadores = contadoresDoPainel(dados || {}); // 15/09 (fase 1 da régua): null = "não sei", nunca 0
   el.innerHTML = `
     <div class="faixa-setor"><h2>Painel</h2><span>o que os robôs fizeram nas últimas 24h, com prova</span></div>
     ${alarmes.length ? `<div class="alarmes"><h3>🔴 Alarmes abertos (${alarmes.length})</h3><ul>${alarmes.map((a) => `
@@ -31,9 +33,17 @@ export function render(el) {
         <a class="ver-diario" href="#diario/${c.setor}">Ver o diário</a>
       </div>`).join('')}
     </div>
+    <div class="contadores-bloqueio"><h3>Conversas bloqueadas e petecas</h3>
+      <ul>${contadores.map((c) => `<li data-chave="${esc(c.chave)}" class="${c.sabe ? '' : 'nao-sei'}"><b>${esc(c.valor)}</b> ${esc(c.rotulo)}</li>`).join('')}</ul>
+    </div>
     <div class="nao-acontecendo"><h3>O que NÃO está acontecendo</h3>
-      ${nao.length || mudos.length ? `<ul>${nao.map((n) => `<li>${esc(n.texto)} — <a href="#diario/${n.setor}">${esc(n.setorTitulo)}</a></li>`).join('')}${mudos.map((v) => `<li class="vip-mudo">${esc(v.nome)} ${v.dias === null ? 'sem interação registrada' : 'mudo há ' + v.dias + ' dias'} — <a href="#carteira/${esc(v.pessoaId)}">Carteira</a></li>`).join('')}</ul>` : '<p>nada pendente</p>'}
+      ${nao.length || mudos.length ? `<ul>${nao.map((n) => n.liberavel
+        ? `<li class="bloqueada" data-ref="${esc(n.ref)}">${esc(n.texto)} <button class="liberar">Liberar conversa</button> <a href="#diario/${n.setor}">${esc(n.setorTitulo)}</a></li>`
+        : `<li>${esc(n.texto)} — <a href="#diario/${n.setor}">${esc(n.setorTitulo)}</a></li>`).join('')}${mudos.map((v) => `<li class="vip-mudo">${esc(v.nome)} ${v.dias === null ? 'sem interação registrada' : 'mudo há ' + v.dias + ' dias'} — <a href="#carteira/${esc(v.pessoaId)}">Carteira</a></li>`).join('')}</ul>` : '<p>nada pendente</p>'}
     </div>`;
+  // 15/09 (fase 1 da régua, peça 8): Liberar conversa abre o diálogo da página (sem prompt/confirm nativos)
+  el.querySelectorAll('.nao-acontecendo li.bloqueada button.liberar').forEach((b) => b.addEventListener('click',
+    () => abrirLiberar(b.closest('li').dataset.ref, async () => { await carregar(); render(el); })));
   el.querySelectorAll('.alarmes button.resolver').forEach((b) => b.addEventListener('click', async () => {
     const id = b.closest('li').dataset.alarme;
     try { await fila('alarme_resolver', { id }); await carregar(); render(el); } catch (e) { alert('Não consegui resolver: ' + e.message); }

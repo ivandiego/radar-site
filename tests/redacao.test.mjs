@@ -41,3 +41,25 @@ test('F4.20 gruposDaRedacao: mensagem que chegou DEPOIS do rascunho vira aviso n
   assert.deepEqual(g[0].rascunhos[0].chegouDepois, { texto: 'alô?', hora: '03/09 18:00' });
   assert.equal(g[0].rascunhos[1].chegouDepois, null);
 });
+
+// ---- 15/09: fase 1 da régua do rascunho (radar-permutas PR 218, peças 2 e 16) ----
+// `barrada` é estado final: a régua segurou o texto. A tela mostra com o motivo, sem esconder.
+// O motivo mora em mensagem_fila.erro como REGUA:<códigos> (gatilho fila_zz_regua); os nomes espelham REGUA_NOMES da edge.
+import { motivoDaRegua, barradasDoDiario } from '../js/redacao.js';
+test('motivoDaRegua: códigos da régua em português; conversa bloqueada; erro sem REGUA fica null', () => {
+  assert.equal(motivoDaRegua('REGUA:travessao'), 'travessão');
+  assert.equal(motivoDaRegua('REGUA:telefone,saudacao'), 'telefone, saudação de período no começo (use "Oi, <nome>!")');
+  assert.equal(motivoDaRegua('REGUA:conversa_bloqueada'), 'conversa bloqueada (liberar ou escrever)');
+  assert.equal(motivoDaRegua('REGUA:codigo_novo'), 'codigo novo');
+  assert.equal(motivoDaRegua('WhatsApp Web nao reconhece'), null);
+  assert.equal(motivoDaRegua(null), null);
+});
+test('barradasDoDiario: só rascunho_barrado, com hora curta, prova e sem telefone inteiro', () => {
+  const b = barradasDoDiario([
+    { setor: 'redacao', tipo: 'rascunho_barrado', hora: '2026-09-15T13:00:00Z', quem: '5513977002222', texto: '5513977002222 → "Boa tarde! Tudo bem?"', prova_ref: 'mensagem_fila:b1' },
+    { setor: 'redacao', tipo: 'rascunho_decisao', hora: '2026-09-15T12:00:00Z', quem: 'EWS', texto: 'EWS → "Oi"', prova_ref: 'mensagem_fila:f1' },
+  ], 'America/Sao_Paulo');
+  assert.equal(b.length, 1);
+  assert.deepEqual(b[0], { id: 'b1', hora: '15/09 10:00', quem: '•••••••••2222', texto: '•••••••••2222 → "Boa tarde! Tudo bem?"', prova_ref: 'mensagem_fila:b1' });
+  assert.deepEqual(barradasDoDiario(undefined), []);
+});

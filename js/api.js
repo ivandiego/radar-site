@@ -57,6 +57,7 @@ export async function fila(acao, payload = {}) {
     body: JSON.stringify({ acao, ...payload }),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok || d.erro) throw new Error(d.erro || 'fila indisponível (' + r.status + ')');
+  // 15/09 (fase 1 da régua): o erro leva status e corpo — a tela distingue o 409 do lembrete (bloqueio) e o 404 do liberar
+  if (!r.ok || d.erro) throw Object.assign(new Error(d.erro || 'fila indisponível (' + r.status + ')'), { status: r.status, dados: d });
   return d;
 }
