@@ -18,3 +18,21 @@ test('blocosDaCobranca: separa nossas/deles, vencidas primeiro com atraso, petec
   assert.deepEqual(b.resumo, { nossasVencidas: 1, delesVencidas: 1 });
   assert.deepEqual(blocosDaCobranca({}, agora, 'UTC').resumo, { nossasVencidas: 0, delesVencidas: 0 });
 });
+
+// ---- 15/09: fase 1 da régua do rascunho (radar-permutas PR 218, peças 12 e 14) ----
+// agenda_lembrar dá 409 ANTES do insert quando a conversa está bloqueada ({erro, bloqueio}); e 409 quando já tem lembrete.
+// A tela diz o que aconteceu (sem alert) e, no bloqueio, oferece liberar a conversa.
+import { avisoDoLembrete } from '../js/cobranca.js';
+test('avisoDoLembrete: 409 de conversa bloqueada explica e aponta o bloqueio para liberar', () => {
+  const e = Object.assign(new Error('conversa bloqueada: liberar ou escrever'), { status: 409, dados: { erro: 'conversa bloqueada: liberar ou escrever', bloqueio: 'bl1' } });
+  const a = avisoDoLembrete(e);
+  assert.equal(a.bloqueioRef, 'bloqueio_conversa:bl1');
+  assert.match(a.texto, /conversa está bloqueada/); assert.match(a.texto, /não foi criado/);
+  assert.ok(!a.texto.includes('—'));
+});
+test('avisoDoLembrete: 409 de lembrete repetido explica sem oferecer liberar; outro erro repassa a mensagem', () => {
+  const dup = avisoDoLembrete(Object.assign(new Error('x'), { status: 409, dados: { erro: 'esse compromisso já tem lembrete na fila ou enviado: aguardando o Ivan' } }));
+  assert.equal(dup.bloqueioRef, null); assert.match(dup.texto, /já tem lembrete/);
+  const outro = avisoDoLembrete(new Error('fila indisponível (500)'));
+  assert.equal(outro.bloqueioRef, null); assert.equal(outro.texto, 'Não consegui lembrar: fila indisponível (500)');
+});

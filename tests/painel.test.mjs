@@ -91,3 +91,56 @@ test('cartoesDoPainel: falha_abrir entra no "fez" com o rótulo, ao lado dos cha
   const p = { setores: { ...payload.setores, recepcao: { ultima_rodada: '2026-09-13T15:00:00Z', fez: [{ tipo: 'chat_lido', n: 12 }, { tipo: 'falha_abrir', n: 3 }], travado: [] } } };
   assert.equal(cartoesDoPainel(p)[0].fez, '12 chats lidos · 3 falhas ao abrir');
 });
+
+// ---- 15/09: fase 1 da régua do rascunho (radar-permutas PR 218, ficha 2026-09-14-rascunho-errado-e-reescrita v13.1, peça 16) ----
+// A edge `fila` passa a mandar o item `conversa_bloqueada` (ref bloqueio_conversa:<id>) e `contadores` no painel.
+// null nos contadores = "não sei" (a peteca não foi lida), NUNCA zero. Telefone nunca aparece inteiro na tela.
+import { contadoresDoPainel, mascararDestino, mascararTelefones, pedidoDeLiberacao } from '../js/painel.js';
+test('rotuloTipo: rascunho_barrado, conversa_bloqueada e bloqueio_fechado com rótulo de gente', () => {
+  assert.equal(rotuloTipo('rascunho_barrado', 1), 'rascunho barrado');
+  assert.equal(rotuloTipo('rascunho_barrado'), 'rascunhos barrados');
+  assert.equal(rotuloTipo('conversa_bloqueada'), 'conversas bloqueadas');
+  assert.equal(rotuloTipo('bloqueio_fechado', 1), 'conversa liberada');
+});
+test('mascararDestino: telefone vira •••••••••1234; chat-id da OLX não é telefone e fica', () => {
+  assert.equal(mascararDestino('5513977002222'), '•••••••••2222');
+  assert.equal(mascararDestino('(13) 97700-2222'), '•••••••••2222');
+  assert.equal(mascararDestino('==abc@conference.olxbr'), '==abc@conference.olxbr');
+  assert.equal(mascararDestino(''), '');
+  assert.equal(mascararDestino(null), '');
+});
+test('mascararTelefones: número dentro do texto sai mascarado; número curto (valor, hora) fica', () => {
+  assert.equal(mascararTelefones('5513977002222 bloqueada: liberar ou escrever'), '•••••••••2222 bloqueada: liberar ou escrever');
+  assert.equal(mascararTelefones('ligar (11) 94956-4957 hoje'), 'ligar •••••••••4957 hoje');
+  assert.equal(mascararTelefones('Nani sem resposta há 3h: "200 mil"'), 'Nani sem resposta há 3h: "200 mil"');
+  assert.equal(mascararTelefones('prazo 2026-09-15 às 10:00'), 'prazo 2026-09-15 às 10:00');
+});
+test('naoAcontecendo: conversa_bloqueada pode ser liberada e o texto não mostra telefone inteiro', () => {
+  const n = naoAcontecendo({ nao_acontecendo: [
+    { tipo: 'conversa_bloqueada', texto: '5513977002222 bloqueada: liberar ou escrever', setor: 'redacao', ref: 'bloqueio_conversa:bl1' },
+    { tipo: 'cliente_sem_resposta', texto: 'Nani sem resposta há 3h', setor: 'redacao', ref: 'mensagem_recebida:r1' },
+  ] });
+  assert.equal(n[0].liberavel, true); assert.equal(n[0].texto, '•••••••••2222 bloqueada: liberar ou escrever');
+  assert.equal(n[0].ref, 'bloqueio_conversa:bl1');
+  assert.equal(n[1].liberavel, false);
+});
+test('contadoresDoPainel: número vira número; null e ausente viram "não sei", nunca 0', () => {
+  const c = contadoresDoPainel({ contadores: { bloqueios_abertos: 2, barradas_repetidas: 0, petecas_excluidas_por_bloqueio: null, petecas_sem_identidade: 3, peteca_sem_conversa: null } });
+  const por = Object.fromEntries(c.map((x) => [x.chave, x]));
+  assert.deepEqual(c.map((x) => x.chave), ['bloqueios_abertos', 'barradas_repetidas', 'petecas_excluidas_por_bloqueio', 'petecas_sem_identidade', 'peteca_sem_conversa']);
+  assert.equal(por.bloqueios_abertos.valor, '2'); assert.equal(por.bloqueios_abertos.sabe, true);
+  assert.equal(por.barradas_repetidas.valor, '0'); assert.equal(por.barradas_repetidas.sabe, true);
+  assert.equal(por.petecas_excluidas_por_bloqueio.valor, 'não sei'); assert.equal(por.petecas_excluidas_por_bloqueio.sabe, false);
+  assert.equal(por.peteca_sem_conversa.valor, 'não sei');
+  assert.ok(c.every((x) => x.rotulo && !x.rotulo.includes('—')), 'rótulo em português, sem travessão');
+  // edge antiga (sem contadores): tudo "não sei"
+  assert.ok(contadoresDoPainel({}).every((x) => x.valor === 'não sei' && x.sabe === false));
+});
+test('pedidoDeLiberacao: da prova do bloqueio sai {canal, destino}; fechado ou incompleto não libera', () => {
+  const ok = pedidoDeLiberacao({ id: 'bl1', canal: 'whatsapp', destino_canonico: '5513977002222', fechado_em: null, motivo: 'rejeitado' });
+  assert.deepEqual(ok, { ok: true, canal: 'whatsapp', destino: '5513977002222', destinoMascarado: '•••••••••2222' });
+  assert.equal(pedidoDeLiberacao({ canal: 'whatsapp', destino_canonico: '5513977002222', fechado_em: '2026-09-15T10:00:00Z' }).ok, false);
+  assert.match(pedidoDeLiberacao({ canal: 'whatsapp', destino_canonico: '5513977002222', fechado_em: '2026-09-15T10:00:00Z' }).erro, /já está liberada/);
+  assert.equal(pedidoDeLiberacao(null).ok, false);
+  assert.equal(pedidoDeLiberacao({ canal: '', destino_canonico: 'x' }).ok, false);
+});
