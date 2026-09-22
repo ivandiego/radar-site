@@ -1,0 +1,10 @@
+# Varredura de segredos do site do Radar (22/09/2026). Regras padrão do gitleaks + exceções auditadas.
+title = "Radar site — gitleaks"
+[extend]
+useDefault = true
+[allowlist]
+description = "Exceções auditadas"
+regexes = [
+  # Chave PUBLICÁVEL do Supabase (js/config.js): pública por desenho; a proteção é o RLS no banco, não o sigilo da chave.
+  '''sb_publishable_[A-Za-z0-9_\-]+''',
+]
