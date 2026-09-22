@@ -42,6 +42,26 @@ test('F4.20 gruposDaRedacao: mensagem que chegou DEPOIS do rascunho vira aviso n
   assert.equal(g[0].rascunhos[1].chegouDepois, null);
 });
 
+// P4 (ficha 2026-09-21 bloqueio-fecha-na-reescrita v1.1, D2 obs.4): a Redação mostra o rótulo
+// "reescrita" e o motivo original no card. O backend (edge fila `regras.ts` PR #232) manda
+// `rascunhos[].reescrita = { motivo, fila_id } | null`. Aqui o view-model precisa PROPAGAR
+// esse campo — o teste garante que `reescrita` chega inteiro em `g.rascunhos[].reescrita`.
+test('P4 gruposDaRedacao: propaga reescrita={motivo, fila_id} quando o backend manda; null quando não manda', () => {
+  const g = gruposDaRedacao({ grupos: [{ destino: 'd', rotulo: 'Ana', canal: 'whatsapp', recebida: null,
+    rascunhos: [
+      { id: 'f1', texto: 'oi de novo', criado_em: '2026-09-22T00:10:00Z', origem: 'pensador',
+        estado: 'pendente_aprovacao', duplicado_de: null,
+        reescrita: { motivo: 'saudar pelo nome', fila_id: 'aaaa-1111-bbbb-2222' } },
+      { id: 'f2', texto: 'primeira vez', criado_em: '2026-09-22T00:11:00Z', origem: 'pensador',
+        estado: 'pendente_aprovacao', duplicado_de: null, reescrita: null },
+      { id: 'f3', texto: 'sem campo', criado_em: '2026-09-22T00:12:00Z', origem: 'pensador',
+        estado: 'pendente_aprovacao', duplicado_de: null /* sem 'reescrita' */ },
+    ] }] }, agora);
+  assert.deepEqual(g[0].rascunhos[0].reescrita, { motivo: 'saudar pelo nome', fila_id: 'aaaa-1111-bbbb-2222' });
+  assert.equal(g[0].rascunhos[1].reescrita, null);
+  assert.equal(g[0].rascunhos[2].reescrita, null, 'campo ausente vira null explícito, nunca undefined');
+});
+
 // ---- 15/09: fase 1 da régua do rascunho (radar-permutas PR 218, peças 2 e 16) ----
 // `barrada` é estado final: a régua segurou o texto. A tela mostra com o motivo, sem esconder.
 // O motivo mora em mensagem_fila.erro como REGUA:<códigos> (gatilho fila_zz_regua); os nomes espelham REGUA_NOMES da edge.
