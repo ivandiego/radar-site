@@ -19,8 +19,9 @@ export function render(el) {
         ${g.recebida ? `<div class="disse">ele(a) disse (${g.recebida.hora}): “${esc(g.recebida.texto)}”</div>` : '<div class="disse">sem mensagem recente dele(a) na caixa</div>'}
         ${g.aviso ? `<div class="aviso">${esc(g.aviso)}</div>` : ''}
         <ul>${g.rascunhos.map((r) => `
-          <li data-fid="${esc(r.id)}" class="${r.ehDuplicata ? 'dup' : ''}">
-            <div class="meta"><small>${r.hora} · ${esc(r.origem)}${r.ehDuplicata ? ' · duplicata' : ''}</small></div>
+          <li data-fid="${esc(r.id)}" class="${r.ehDuplicata ? 'dup' : ''}${r.reescrita ? ' reescrita' : ''}">
+            <div class="meta"><small>${r.hora} · ${esc(r.origem)}${r.ehDuplicata ? ' · duplicata' : ''}${r.reescrita ? ' · reescrita' : ''}</small></div>
+            ${r.reescrita ? `<div class="rotulo-reescrita">reescrita — motivo original: “${esc(r.reescrita.motivo)}”</div>` : ''}
             ${r.chegouDepois ? `<div class="aviso chegou-depois">⚠ chegou mensagem depois deste texto (${r.chegouDepois.hora}): “${esc(r.chegouDepois.texto)}”</div>` : ''}
             <div class="texto">${esc(r.texto)}</div>
             <div class="editor" hidden><textarea rows="4">${esc(r.texto)}</textarea></div>
@@ -49,9 +50,12 @@ export function render(el) {
       try { await fila('aprovar_editado', { id, texto }); await recarregar(); } catch (e) { alert('Não consegui aprovar: ' + e.message); }
     });
     li.querySelector('button.rejeitar').addEventListener('click', async () => {
+      // P4 D6: motivo obrigatório. A edge também recusa por 422, mas avisar aqui evita a ida ao servidor.
       const motivo = prompt('Motivo em uma linha (vai pro diário e ensina o Pensador):');
       if (motivo === null) return;
-      try { await fila('rejeitar', { id, motivo }); await recarregar(); } catch (e) { alert('Não consegui rejeitar: ' + e.message); }
+      const t = (motivo || '').trim();
+      if (t.length < 3) { alert('Motivo é obrigatório (mínimo 3 caracteres).'); return; }
+      try { await fila('rejeitar', { id, motivo: t }); await recarregar(); } catch (e) { alert('Não consegui rejeitar: ' + e.message); }
     });
   });
 }

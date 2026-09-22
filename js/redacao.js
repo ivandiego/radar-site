@@ -6,8 +6,11 @@ const fmt = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit',
 export function gruposDaRedacao(payload, agora = new Date(), tz = 'UTC') {
   return (payload.grupos || []).map((g) => {
     // F4.20: chegouDepois = mensagem da pessoa que chegou DEPOIS deste texto (o Ivan não aprova às cegas)
+    // P4 (ficha 2026-09-21 bloqueio-fecha-na-reescrita, D2 obs.4): reescrita={motivo, fila_id} vem do
+    // backend pra virar rótulo "reescrita" + motivo no card. Ausente ou vazio => null explícito.
     const rascunhos = (g.rascunhos || []).map((r) => ({ id: r.id, texto: r.texto || '', hora: fmt(r.criado_em, tz), origem: r.origem || '', duplicado_de: r.duplicado_de || null, ehDuplicata: !!r.duplicado_de,
-      chegouDepois: r.chegou_depois ? { texto: r.chegou_depois.texto || '', hora: fmt(r.chegou_depois.hora, tz) } : null }));
+      chegouDepois: r.chegou_depois ? { texto: r.chegou_depois.texto || '', hora: fmt(r.chegou_depois.hora, tz) } : null,
+      reescrita: (r.reescrita && r.reescrita.motivo) ? { motivo: String(r.reescrita.motivo), fila_id: String(r.reescrita.fila_id || '') } : null }));
     const dups = rascunhos.filter((r) => r.ehDuplicata).length;
     const tempos = (g.rascunhos || []).map((r) => new Date(r.criado_em).getTime()).filter((t) => !Number.isNaN(t)).sort((a, b) => a - b);
     return {
