@@ -37,7 +37,7 @@ export function pontasDoVip(alvos, tz = 'UTC') {
       if (e.canal_resposta === 'whatsapp') return { apelido, classe: 'respondeu', texto: `dono respondeu pelo WhatsApp do anunciante${e.ultima_deles ? ` em ${dia(e.ultima_deles, tz)}` : ''} (${msgs}): pode ser sobre outro imóvel do mesmo corretor` };
       return { apelido, classe: 'respondeu', texto: `dono respondeu${e.ultima_deles ? ` em ${dia(e.ultima_deles, tz)}` : ''} (${msgs})` };
     }
-    if (e.estado_real === 'mudo') { const d = Math.floor(Number(e.dias_mudo) || 0); return { apelido, classe: 'mudo', texto: `dono mudo há ${d} dia${d === 1 ? '' : 's'}` }; }
+    if (e.estado_real === 'mudo') { const d = Math.floor(Number(e.dias_mudo) || 0); return d < 1 ? { apelido, classe: 'sem-conversa', texto: 'abordado, sem resposta ainda' } : { apelido, classe: 'mudo', texto: `dono mudo há ${d} dia${d === 1 ? '' : 's'}` }; }
     if (e.estado_real === 'sem_conversa') return { apelido, classe: 'sem-conversa', texto: 'sem conversa com o dono (ainda não abordado?)' };
     if (e.estado_real === 'excluido') return { apelido, classe: 'excluido', texto: 'anúncio excluído' };
     return { apelido, classe: 'nao-lido', texto: 'estado desconhecido' };
@@ -45,8 +45,9 @@ export function pontasDoVip(alvos, tz = 'UTC') {
 }
 // quem falou por último com o CLIENTE, do "canal_ultima" da auditoria ("nosso 2026-08-29T12:00: …" / "dele(a) …", UTC)
 export function clienteDaUltima(canalUltima, tz = 'UTC') {
-  const m = String(canalUltima || '').match(/^(nosso|dele\(a\)) (\d{4}-\d\d-\d\dT\d\d:\d\d)/);
-  if (!m) return 'conversa do cliente não lida nesta rodada';
+  const t = String(canalUltima || '');
+  const m = t.match(/^(nosso|dele\(a\)) (\d{4}-\d\d-\d\dT\d\d:\d\d)/);
+  if (!m) return /^erro/.test(t) || !t ? 'conversa do cliente não lida nesta rodada' : 'sem conversa com o cliente encontrada nesta rodada';
   return `última com o cliente: ${m[1] === 'nosso' ? 'nossa' : 'dele(a)'} em ${dia(m[2] + ':00Z', tz)}`;
 }
 export function vipsDaAuditoria(payload, tz = 'UTC') {

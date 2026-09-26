@@ -19,7 +19,7 @@ export function render(el) {
   const vipLi = (v) => `<li class="vip-aud ${esc(v.veredito)}" data-pessoa="${esc(v.pessoaId)}"><b>${esc(v.nome)}</b> <small>${esc(v.rotulo)} · ${v.alvos} alvo(s)${v.alvosExcluidos ? `, ${v.alvosExcluidos} excluído(s)` : ''}</small>
     ${v.motivos.length ? `<ul class="motivos">${v.motivos.map((m) => `<li class="${esc(m.gravidade)}">${esc(m.texto)}</li>`).join('')}</ul>` : ''}
     <div class="confronto"><div><b>O canal diz:</b> ${esc(v.canalUltima || 'sem conversa lida')}</div><div><b>O site diz:</b> ${esc(v.siteUltima || '—')}</div></div>
-    ${v.pontas.length ? `<div class="pontas"><b>As pontas</b> <small>${esc(v.cliente)}</small><ul>${v.pontas.map((p) => `<li class="ponta ${esc(p.classe)}"><span class="apelido">${esc(p.apelido)}</span> — ${esc(p.texto)}</li>`).join('')}</ul></div>` : ''}
+    ${v.pontas.length ? `<div class="pontas-aud"><b>As pontas</b> <small>${esc(v.cliente)}</small><ul>${v.pontas.map((p) => `<li class="ponta-aud ${esc(p.classe)}"><span class="apelido">${esc(p.apelido)}</span> — ${esc(p.texto)}</li>`).join('')}</ul></div>` : ''}
     <div class="acoes"><a href="#carteira/${esc(v.pessoaId)}">Abrir na Carteira</a> <a href="#auditoria">Conferir conversas</a></div></li>`;
   // F4.6.3b/F4.6.5: a rodada por agente (Leitor → Confrontador → Espelho), com hora e o que cada um fez
   const r = rodadasDaAuditoria(aud || {}, 'America/Sao_Paulo');

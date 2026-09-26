@@ -340,11 +340,11 @@ def main():
         ok("excluído na OLX" in page.inner_text('#setor li.vip-aud.vermelho') and 'href="#carteira/m1"' in page.inner_html('#setor li.vip-aud.vermelho'), "fiscalização: motivo do VIP vermelho e link pra Carteira")
         ok("auditoria_listar" in acoes_fila, "fiscalização: busca a última rodada da auditoria")
         # 26/09 painel das pontas: cada dono do VIP com o estado lido do canal, ao lado da última conversa com o cliente
-        pontas = page.inner_text('#setor li.vip-aud.vermelho .pontas')
+        pontas = page.inner_text('#setor li.vip-aud.vermelho .pontas-aud')
         ok("última com o cliente: dele(a) em 02/09" in pontas, "pontas: quem falou por último com o cliente")
         ok("Mateus × Tupi" in pontas and "respondeu na OLX em 03/09" in pontas, "pontas: dono que respondeu, com data e canal")
         ok("não lido nesta rodada" in pontas and "mudo" not in pontas, "pontas: meia conversa é 'não lido', nunca 'mudo'")
-        ok(page.locator('#setor li.vip-aud.vermelho li.ponta.excluido').count() == 1, "pontas: anúncio excluído com a classe própria")
+        ok(page.locator('#setor li.vip-aud.vermelho li.ponta-aud.excluido').count() == 1, "pontas: anúncio excluído com a classe própria")
         # F4.10: tela Estatística — números por canal, frase de abertura e quem espera resposta nossa
         page.click('#setores a[href="#estatistica"]')
         page.wait_for_selector('#setor .est-cartao')
