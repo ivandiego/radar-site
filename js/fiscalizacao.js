@@ -22,6 +22,33 @@ export function violacoesAgrupadas(payload, tz = 'UTC') {
 
 // F4.5.9: auditoria mecânica de VIPs (última rodada) — a unidade é o VIP; vermelho > amarelo > verde.
 const COR_ROTULO = { vermelho: 'site não bate com o canal', amarelo: 'alguém espera por nós', verde: 'site bate com o canal' };
+// 26/09 (painel das pontas, plano autônomo PR 4): "as pontas não andam juntas… não consigo acompanhar". Cada VIP mostra
+// o estado de cada dono como a auditoria LEU do canal. Informação, não acusação: o que não foi lido sai "não lido" (nunca
+// "mudo"), e resposta pelo WhatsApp do anunciante sai escrita como sinal que pode ser de outro imóvel (corretor).
+const dia = (iso, tz) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: tz });
+export function pontasDoVip(alvos, tz = 'UTC') {
+  return (Array.isArray(alvos) ? alvos : []).filter(Boolean).map((a) => {
+    const e = a.estado || {}; const apelido = String((a.par && (a.par.apelido || a.par.id)) || '?');
+    const naoLido = e.estado_real === 'sem_retrato' || ((e.olx_nao_lido || e.wa_nao_lido) && e.estado_real !== 'respondeu' && e.estado_real !== 'excluido');
+    if (naoLido) return { apelido, classe: 'nao-lido', texto: 'não lido nesta rodada (não dá pra dizer se respondeu)' };
+    if (e.estado_real === 'respondeu') {
+      const n = Number(e.msgs_deles) || 0; const msgs = `${n} msg${n === 1 ? '' : 's'}`;
+      if (e.ultima_deles_olx) return { apelido, classe: 'respondeu', texto: `dono respondeu na OLX em ${dia(e.ultima_deles_olx, tz)} (${msgs})` };
+      if (e.canal_resposta === 'whatsapp') return { apelido, classe: 'respondeu', texto: `dono respondeu pelo WhatsApp do anunciante${e.ultima_deles ? ` em ${dia(e.ultima_deles, tz)}` : ''} (${msgs}): pode ser sobre outro imóvel do mesmo corretor` };
+      return { apelido, classe: 'respondeu', texto: `dono respondeu${e.ultima_deles ? ` em ${dia(e.ultima_deles, tz)}` : ''} (${msgs})` };
+    }
+    if (e.estado_real === 'mudo') { const d = Math.floor(Number(e.dias_mudo) || 0); return { apelido, classe: 'mudo', texto: `dono mudo há ${d} dia${d === 1 ? '' : 's'}` }; }
+    if (e.estado_real === 'sem_conversa') return { apelido, classe: 'sem-conversa', texto: 'sem conversa com o dono (ainda não abordado?)' };
+    if (e.estado_real === 'excluido') return { apelido, classe: 'excluido', texto: 'anúncio excluído' };
+    return { apelido, classe: 'nao-lido', texto: 'estado desconhecido' };
+  });
+}
+// quem falou por último com o CLIENTE, do "canal_ultima" da auditoria ("nosso 2026-08-29T12:00: …" / "dele(a) …", UTC)
+export function clienteDaUltima(canalUltima, tz = 'UTC') {
+  const m = String(canalUltima || '').match(/^(nosso|dele\(a\)) (\d{4}-\d\d-\d\dT\d\d:\d\d)/);
+  if (!m) return 'conversa do cliente não lida nesta rodada';
+  return `última com o cliente: ${m[1] === 'nosso' ? 'nossa' : 'dele(a)'} em ${dia(m[2] + ':00Z', tz)}`;
+}
 export function vipsDaAuditoria(payload, tz = 'UTC') {
   const linhas = (payload && payload.vips) || [];
   const peso = { vermelho: 0, amarelo: 1, verde: 2 };
@@ -32,6 +59,7 @@ export function vipsDaAuditoria(payload, tz = 'UTC') {
     alvos: Array.isArray(v.alvos) ? v.alvos.length : 0,
     alvosExcluidos: (Array.isArray(v.alvos) ? v.alvos : []).filter((a) => a && a.estado && a.estado.estado_real === 'excluido').length,
     canalUltima: v.canal_ultima || '', siteUltima: v.site_ultima || '', prints: Array.isArray(v.evidencias) ? v.evidencias.length : 0,
+    pontas: pontasDoVip(v.alvos, tz), cliente: clienteDaUltima(v.canal_ultima, tz),
   })).sort((a, b) => peso[a.veredito] - peso[b.veredito] || a.nome.localeCompare(b.nome, 'pt-BR'));
   const resumo = { total: vips.length, vermelhos: vips.filter((v) => v.veredito === 'vermelho').length, amarelos: vips.filter((v) => v.veredito === 'amarelo').length, verdes: vips.filter((v) => v.veredito === 'verde').length };
   return { vips, resumo, rodada: payload && payload.rodada_em ? fmt(payload.rodada_em, tz) : null };

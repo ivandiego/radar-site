@@ -208,7 +208,7 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .rodada-aud li.agente.atencao b { color: #b3261e; }
 .rodada-aud .aviso { color: #b3261e; font-weight: 600; }
 .vip-aud .confronto { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-size: .85rem; margin: .3rem 0; }
-.vip-aud .confronto div { background: #f6f6f6; padding: .3rem .5rem; border-radius: 4px; }
+.vip-aud .confronto div { background: var(--painel); border: 1px solid var(--linha); color: var(--tx); padding: .3rem .5rem; border-radius: 4px; } /* 26/09: era #f6f6f6 com texto claro do tema escuro (ilegível) */
 @media (max-width: 700px) { .vip-aud .confronto { grid-template-columns: 1fr; } }
 
 /* F4.10 — Estatística */
@@ -222,3 +222,14 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .est-tabela tr.melhor td { background: #e8f5e9; }
 .est-tabela.bola tr.nunca td { background: #fdecea; }
 @media (max-width: 700px) { .est-grade { grid-template-columns: 1fr; } }
+
+/* 26/09 painel das pontas (Fiscalização → VIPs hoje): cada dono ao lado da última conversa com o cliente. Tokens do tema. */
+.pontas { margin: .4rem 0 .2rem; color: var(--tx); }
+.pontas ul { margin: .2rem 0 0; padding-left: .4rem; }
+.ponta { list-style: none; margin: .15rem 0; padding-left: .5rem; border-left: 3px solid var(--linha); color: var(--tx); }
+.ponta.respondeu { border-left-color: var(--verde); }
+.ponta.mudo { border-left-color: var(--verm); }
+.ponta.sem-conversa { border-left-color: var(--ambar); }
+.ponta.excluido { text-decoration: line-through; opacity: .7; }
+.ponta.nao-lido { opacity: .75; font-style: italic; }
+.ponta .apelido { font-weight: 600; }
