@@ -51,3 +51,53 @@ test('vipsDaAuditoria: leva o que o site dizia (site_ultima) pro confronto na te
   const a = vipsDaAuditoria({ rodada_em: '2026-09-05T09:00:00Z', vips: [{ pessoa_id: 'p1', nome: 'X', veredito: 'verde', motivos: [], alvos: [], canal_ultima: 'dele(a) 2026-09-05T10: oi', site_ultima: 'aguardando fotos | ligar' }] });
   assert.equal(a.vips[0].siteUltima, 'aguardando fotos | ligar'); assert.equal(a.vips[0].canalUltima, 'dele(a) 2026-09-05T10: oi');
 });
+
+// 26/09 (painel das pontas, plano autônomo do Radar, PR 4): o Ivan pediu "as pontas não estão andando juntas… não consigo
+// acompanhar". Cada VIP mostra suas pontas: o estado de cada dono (lido do canal pela auditoria) ao lado de quando foi a
+// última conversa com o cliente. Informação, não acusação: sinal compartilhado sai escrito como tal.
+import { pontasDoVip, clienteDaUltima } from '../js/fiscalizacao.js';
+test('pontasDoVip: estado de cada dono com a fonte escrita; não lido é "não lido", nunca "mudo"', () => {
+  const alvos = [
+    { par: { apelido: 'Sobota × casa Sorocaba' }, estado: { estado_real: 'respondeu', msgs_deles: 2, ultima_deles_olx: '2026-09-03T13:00:00Z' } },
+    { par: { apelido: 'Dennys × Aviação' }, estado: { estado_real: 'respondeu', msgs_deles: 1, canal_resposta: 'whatsapp', ultima_deles: '2026-09-22T17:29:00Z' } },
+    { par: { apelido: 'Ana × Gonzaga' }, estado: { estado_real: 'mudo', msgs_deles: 0, dias_mudo: 5.4 } },
+    { par: { apelido: 'EWS × Centro SV' }, estado: { estado_real: 'mudo', msgs_deles: 0, dias_mudo: 9, wa_nao_lido: true } },
+    { par: { apelido: 'Mateus × Tupi' }, estado: { estado_real: 'sem_conversa', msgs_deles: 0 } },
+    { par: { apelido: 'Layza × Boqueirão' }, estado: { estado_real: 'excluido', msgs_deles: 0 } },
+    { par: { apelido: 'X × sem retrato' }, estado: { estado_real: 'sem_retrato' } },
+  ];
+  const p = pontasDoVip(alvos, 'America/Sao_Paulo');
+  assert.equal(p.length, 7);
+  assert.equal(p[0].classe, 'respondeu'); assert.match(p[0].texto, /respondeu na OLX em 03\/09/);
+  assert.equal(p[1].classe, 'respondeu'); assert.match(p[1].texto, /WhatsApp do anunciante/); assert.match(p[1].texto, /pode ser sobre outro imóvel/);
+  assert.equal(p[2].classe, 'mudo'); assert.match(p[2].texto, /mudo há 5 dias/);
+  assert.equal(p[3].classe, 'nao-lido'); assert.match(p[3].texto, /não lido/, 'meia conversa: não diz mudo');
+  assert.equal(p[4].classe, 'sem-conversa'); assert.match(p[4].texto, /sem conversa/);
+  assert.equal(p[5].classe, 'excluido'); assert.match(p[5].texto, /anúncio excluído/);
+  assert.equal(p[6].classe, 'nao-lido');
+  assert.deepEqual(p.map((x) => x.apelido), alvos.map((a) => a.par.apelido));
+});
+test('vipsDaAuditoria leva as pontas e quem falou por último com o cliente', () => {
+  const a = vipsDaAuditoria({ rodada_em: '2026-09-05T09:00:00Z', vips: [{ pessoa_id: 'v', nome: 'Sobota', veredito: 'amarelo', motivos: [],
+    alvos: [{ par: { apelido: 'casa' }, estado: { estado_real: 'mudo', dias_mudo: 3 } }], canal_ultima: 'nosso 2026-08-29T12:00: vou ver com o dono' }] }, 'America/Sao_Paulo');
+  assert.equal(a.vips[0].pontas.length, 1);
+  assert.match(a.vips[0].cliente, /nossa em 29\/08/);
+  const b = vipsDaAuditoria({ vips: [{ pessoa_id: 'w', nome: 'W', veredito: 'verde', alvos: [], canal_ultima: 'dele(a) 2026-09-04T10:00: ok' }] }, 'America/Sao_Paulo');
+  assert.match(b.vips[0].cliente, /dele\(a\) em 04\/09/);
+  const c = vipsDaAuditoria({ vips: [{ pessoa_id: 'z', nome: 'Z', veredito: 'verde', alvos: [], canal_ultima: '' }] }, 'America/Sao_Paulo');
+  assert.equal(c.vips[0].cliente, 'conversa do cliente não lida nesta rodada');
+});
+
+test('pontasDoVip (revisão): respondeu com a OLX não lida continua respondeu; sem_conversa com wa_nao_lido é não lido; mudo < 1 dia não é "mudo há 0 dias"', () => {
+  const p = pontasDoVip([
+    { par: { apelido: 'a' }, estado: { estado_real: 'respondeu', msgs_deles: 1, canal_resposta: 'whatsapp', olx_nao_lido: true } },
+    { par: { apelido: 'b' }, estado: { estado_real: 'sem_conversa', wa_nao_lido: true } },
+    { par: { apelido: 'c' }, estado: { estado_real: 'mudo', dias_mudo: 0.4 } },
+    { par: { apelido: 'd' }, estado: { estado_real: 'mudo', dias_mudo: null } },
+  ], 'UTC');
+  assert.equal(p[0].classe, 'respondeu'); assert.match(p[0].texto, /outro imóvel/);
+  assert.equal(p[1].classe, 'nao-lido');
+  assert.equal(p[2].texto, 'abordado, sem resposta ainda'); assert.equal(p[3].texto, 'abordado, sem resposta ainda');
+  assert.equal(clienteDaUltima('sem conversa no WhatsApp', 'UTC'), 'sem conversa com o cliente encontrada nesta rodada');
+  assert.equal(clienteDaUltima('erro: whats: sem retrato nesta rodada', 'UTC'), 'conversa do cliente não lida nesta rodada');
+});

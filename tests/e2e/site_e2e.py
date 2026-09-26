@@ -91,7 +91,7 @@ FILA = {
         "bola_conosco": [{"canal": "whatsapp", "destino": "5511999990001", "cab": "Carla", "dias": 6, "ultima": "Oi, vi o anúncio", "ultima_em": "2026-09-01T10:00:00Z", "nunca_respondida": True}]}},
         "serie": [{"rodada": "R1", "calculado_em": "2026-09-07T12:00:00Z", "conversas": 6, "olx_abordagens": 3, "olx_respondidas": 1, "olx_taxa": 33, "wa_bola": 1, "olx_bola": 0}]},
     "auditoria_listar": {"rodada_em": "2026-09-05T09:00:00Z", "rodada": "R1", "agentes": {"leitor": {"atualizado_em": "2026-09-05T09:00:00Z", "detalhe": {"pedidos": 58, "lidos": 49, "pulados": 9, "rodada": "R1"}}, "confrontador": {"atualizado_em": "2026-09-05T09:05:00Z", "detalhe": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1, "rodada": "R1"}}}, "resumo": {"total": 2, "vermelhos": 1, "amarelos": 0, "verdes": 1}, "vips": [
-        {"pessoa_id": "m1", "nome": "Mateus", "veredito": "vermelho", "motivos": [{"codigo": "alvo_excluido_marcado_disponivel", "texto": "anúncio 1523198681 excluído na OLX, site marca disponivel", "gravidade": "vermelho"}], "alvos": [{"estado": {"estado_real": "excluido"}}], "evidencias": [], "canal_ultima": "dele(a) 2026-09-02T11:49: Bom dia, tudo bem"},
+        {"pessoa_id": "m1", "nome": "Mateus", "veredito": "vermelho", "motivos": [{"codigo": "alvo_excluido_marcado_disponivel", "texto": "anúncio 1523198681 excluído na OLX, site marca disponivel", "gravidade": "vermelho"}], "alvos": [{"par": {"apelido": "Mateus × Aviação"}, "estado": {"estado_real": "excluido"}}, {"par": {"apelido": "Mateus × Tupi"}, "estado": {"estado_real": "respondeu", "msgs_deles": 2, "ultima_deles_olx": "2026-09-03T13:00:00Z"}}, {"par": {"apelido": "Mateus × Melvi"}, "estado": {"estado_real": "mudo", "msgs_deles": 0, "dias_mudo": 4, "wa_nao_lido": True}}], "evidencias": [], "canal_ultima": "dele(a) 2026-09-02T11:49: Bom dia, tudo bem"},
         {"pessoa_id": "b1", "nome": "Bio", "veredito": "verde", "motivos": [], "alvos": [], "evidencias": []}]},
     "fiscalizacao_listar": {"abertas": [{"id": "v1", "tipo": "ignorada_suspeita", "gravidade": "alta", "referencia": "mensagem_recebida:m1", "descricao": "Mesach: Posso te ligar?", "criado_em": "2026-09-04T09:00:00Z"}], "resolvidas": []},
     "violacao_resolver": {"item": {"id": "v1"}},
@@ -339,6 +339,12 @@ def main():
         ok("1 vermelhos" in page.inner_text('#setor .resumo-vips') and "1 verdes" in page.inner_text('#setor .resumo-vips'), "fiscalização: resumo dos VIPs por cor")
         ok("excluído na OLX" in page.inner_text('#setor li.vip-aud.vermelho') and 'href="#carteira/m1"' in page.inner_html('#setor li.vip-aud.vermelho'), "fiscalização: motivo do VIP vermelho e link pra Carteira")
         ok("auditoria_listar" in acoes_fila, "fiscalização: busca a última rodada da auditoria")
+        # 26/09 painel das pontas: cada dono do VIP com o estado lido do canal, ao lado da última conversa com o cliente
+        pontas = page.inner_text('#setor li.vip-aud.vermelho .pontas-aud')
+        ok("última com o cliente: dele(a) em 02/09" in pontas, "pontas: quem falou por último com o cliente")
+        ok("Mateus × Tupi" in pontas and "respondeu na OLX em 03/09" in pontas, "pontas: dono que respondeu, com data e canal")
+        ok("não lido nesta rodada" in pontas and "mudo" not in pontas, "pontas: meia conversa é 'não lido', nunca 'mudo'")
+        ok(page.locator('#setor li.vip-aud.vermelho li.ponta-aud.excluido').count() == 1, "pontas: anúncio excluído com a classe própria")
         # F4.10: tela Estatística — números por canal, frase de abertura e quem espera resposta nossa
         page.click('#setores a[href="#estatistica"]')
         page.wait_for_selector('#setor .est-cartao')
