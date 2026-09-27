@@ -223,6 +223,8 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .est-tabela.bola tr.nunca td { background: #fdecea; }
 @media (max-width: 700px) { .est-grade { grid-template-columns: 1fr; } }
 
+/* 26/09: rascunho que o Carteiro devolveu — o motivo aparece no card antes de aprovar de novo */
+.rotulo-voltou { border-left: 3px solid var(--amarelo); padding: 4px 8px; margin: 4px 0; font-size: 0.9em; }
 /* 26/09 painel das pontas (Fiscalização → VIPs hoje). Classes PRÓPRIAS (.pontas-aud/.ponta-aud): .pontas/.ponta já são do
    checklist da Carteira (style.css:103-111) — reusar o nome quebrava as duas telas (revisão de código). Tokens do tema. */
 li.vip-aud .pontas-aud { margin: .4rem 0 .2rem; color: var(--tx); }
