@@ -208,7 +208,7 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .rodada-aud li.agente.atencao b { color: #b3261e; }
 .rodada-aud .aviso { color: #b3261e; font-weight: 600; }
 .vip-aud .confronto { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-size: .85rem; margin: .3rem 0; }
-.vip-aud .confronto div { background: #f6f6f6; padding: .3rem .5rem; border-radius: 4px; }
+.vip-aud .confronto div { background: var(--painel); border: 1px solid var(--linha); color: var(--tx); padding: .3rem .5rem; border-radius: 4px; } /* 26/09: era #f6f6f6 com texto claro do tema escuro (ilegível) */
 @media (max-width: 700px) { .vip-aud .confronto { grid-template-columns: 1fr; } }
 
 /* F4.10 — Estatística */
@@ -222,3 +222,15 @@ li.vip-aud .acoes { display: flex; gap: 10px; align-items: center; margin-top: 4
 .est-tabela tr.melhor td { background: #e8f5e9; }
 .est-tabela.bola tr.nunca td { background: #fdecea; }
 @media (max-width: 700px) { .est-grade { grid-template-columns: 1fr; } }
+
+/* 26/09 painel das pontas (Fiscalização → VIPs hoje). Classes PRÓPRIAS (.pontas-aud/.ponta-aud): .pontas/.ponta já são do
+   checklist da Carteira (style.css:103-111) — reusar o nome quebrava as duas telas (revisão de código). Tokens do tema. */
+li.vip-aud .pontas-aud { margin: .4rem 0 .2rem; color: var(--tx); }
+li.vip-aud .pontas-aud ul { margin: .2rem 0 0; padding-left: .4rem; }
+li.vip-aud .ponta-aud { list-style: none; margin: .15rem 0; padding-left: .5rem; border-left: 3px solid var(--linha); color: var(--tx); white-space: normal; font-size: .9rem; }
+li.vip-aud .ponta-aud.respondeu { border-left-color: var(--verde); }
+li.vip-aud .ponta-aud.mudo { border-left-color: var(--verm); }
+li.vip-aud .ponta-aud.sem-conversa { border-left-color: var(--ambar); }
+li.vip-aud .ponta-aud.excluido { text-decoration: line-through; opacity: .7; }
+li.vip-aud .ponta-aud.nao-lido { opacity: .75; font-style: italic; }
+li.vip-aud .ponta-aud .apelido { font-weight: 600; }
