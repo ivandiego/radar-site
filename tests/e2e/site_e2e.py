@@ -111,7 +111,8 @@ FILA = {
     "redacao_listar": {"grupos": [{"destino": "5513988444944", "rotulo": "EWS", "canal": "whatsapp",
         "recebida": {"texto": "Ivan, o apartamento no Ipiranga é uma excelente opção", "hora": "2026-09-02T11:08:00Z"},
         "rascunhos": [{"id": "f1", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:11:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": None,
-                       "chegou_depois": {"texto": "e aí, conseguiu a ficha?", "hora": "2026-09-03T18:00:00Z"}},
+                       "chegou_depois": {"texto": "e aí, conseguiu a ficha?", "hora": "2026-09-03T18:00:00Z"},
+                       "voltou": "pergunta que ele já respondeu: \"qual o bairro?\""},
                       {"id": "f2", "texto": "Bom dia. Passando pra ser honesto…", "criado_em": "2026-09-03T14:19:00Z", "origem": "operador_relogios", "estado": "pendente_aprovacao", "duplicado_de": "f1"}]}]},
     "aprovar_editado": {"item": {"id": "f1", "estado": "aprovada"}},
     "rejeitar": {"item": {"id": "f2", "estado": "rejeitada"}},
@@ -432,6 +433,7 @@ def main():
         page.wait_for_selector('#setor .grupo-redacao')
         ok("apartamento no Ipiranga" in page.inner_text('#setor'), "redação: mostra o que o cliente disse")
         ok("rascunhos iguais" in page.inner_text('#setor'), "redação: aviso de duplicata")
+        ok("Voltou do Carteiro: pergunta que ele já respondeu" in page.inner_text('#setor'), "redação: card mostra por que o Carteiro devolveu")
         ok("chegou mensagem depois deste texto" in page.inner_text('#setor .grupo-redacao li[data-fid="f1"]') and "conseguiu a ficha" in page.inner_text('#setor'),
            "redação: F4.20 avisa a mensagem que chegou depois do rascunho")
         page.click('#setor .grupo-redacao li[data-fid="f1"] button.editar')

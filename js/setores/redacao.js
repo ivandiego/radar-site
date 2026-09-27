@@ -19,8 +19,9 @@ export function render(el) {
         ${g.recebida ? `<div class="disse">ele(a) disse (${g.recebida.hora}): “${esc(g.recebida.texto)}”</div>` : '<div class="disse">sem mensagem recente dele(a) na caixa</div>'}
         ${g.aviso ? `<div class="aviso">${esc(g.aviso)}</div>` : ''}
         <ul>${g.rascunhos.map((r) => `
-          <li data-fid="${esc(r.id)}" class="${r.ehDuplicata ? 'dup' : ''}${r.reescrita ? ' reescrita' : ''}">
+          <li data-fid="${esc(r.id)}" class="${r.ehDuplicata ? 'dup' : ''}${r.reescrita ? ' reescrita' : ''}${r.voltou ? ' voltou' : ''}">
             <div class="meta"><small>${r.hora} · ${esc(r.origem)}${r.ehDuplicata ? ' · duplicata' : ''}${r.reescrita ? ' · reescrita' : ''}</small></div>
+            ${r.voltou ? `<div class="rotulo-voltou">Voltou do Carteiro: ${esc(r.voltou)}. Aprovar de novo sem mudar faz voltar outra vez.</div>` : ''}
             ${r.reescrita ? `<div class="rotulo-reescrita">reescrita — motivo original: “${esc(r.reescrita.motivo)}”</div>` : ''}
             ${r.chegouDepois ? `<div class="aviso chegou-depois">⚠ chegou mensagem depois deste texto (${r.chegouDepois.hora}): “${esc(r.chegouDepois.texto)}”</div>` : ''}
             <div class="texto">${esc(r.texto)}</div>

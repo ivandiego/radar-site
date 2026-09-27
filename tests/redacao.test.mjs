@@ -83,3 +83,18 @@ test('barradasDoDiario: só rascunho_barrado, com hora curta, prova e sem telefo
   assert.deepEqual(b[0], { id: 'b1', hora: '15/09 10:00', quem: '•••••••••2222', texto: '•••••••••2222 → "Boa tarde! Tudo bem?"', prova_ref: 'mensagem_fila:b1' });
   assert.deepEqual(barradasDoDiario(undefined), []);
 });
+
+// 26/09 (radar-permutas, ficha 2026-09-26-redacao-nao-mostra-por-que-voltou): a edge manda `rascunhos[].voltou` = o motivo com que o
+// Carteiro devolveu o rascunho para pendente. O card mostra, com telefone mascarado (o motivo "pergunta repetida" cita a fala da
+// pessoa). Ausente/vazio → null explícito.
+test('voltou: propaga o motivo do Carteiro, mascara telefone; ausente vira null', () => {
+  const g = gruposDaRedacao({ grupos: [{ destino: 'd', rotulo: 'R', canal: 'whatsapp', recebida: null, rascunhos: [
+    { id: 'a', texto: 'oi', criado_em: '2026-09-26T10:00:00Z', origem: 'pensador', voltou: 'pergunta que ele já respondeu: "meu zap 13 99123-4567"' },
+    { id: 'b', texto: 'oi', criado_em: '2026-09-26T10:01:00Z', origem: 'pensador', voltou: null },
+    { id: 'c', texto: 'oi', criado_em: '2026-09-26T10:02:00Z', origem: 'pensador' },
+  ] }] }, new Date('2026-09-26T11:00:00Z'));
+  const [a, b, c] = g[0].rascunhos;
+  assert.match(a.voltou, /^pergunta que ele já respondeu/);
+  assert.doesNotMatch(a.voltou, /99123-4567/, 'telefone mascarado');
+  assert.equal(b.voltou, null); assert.equal(c.voltou, null);
+});
