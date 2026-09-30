@@ -1,4 +1,4 @@
-# Spec: Redação por par (v4, 30/09/2026; estacionada depois de 3 voltas, sem parecer da v4)
+# Spec: Redação por par (v4, 30/09/2026; 4ª volta liberada pelo operador → DEVOLVER; ESTACIONADA DE VEZ)
 
 Escrita pela IA executora na janela de 24 h (fila, Item 6; ordem `radar-permutas/docs/relatorios/2026-09-29-ordem-de-trabalho-par-no-centro.md`, Parte 1, Item 2).
 Peça nova do site, por isso vai por spec, e não por ficha. Depende do `par_id` que o PR 1 da ficha
@@ -336,3 +336,16 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
   pendentes sem `par_id` vêm; ordem e janela do `sem_par`; `alarme_id` conferido; os residuais `olx_anuncio`→`olx` e texto do
   alarme no Painel; o "+ Fila" grava `olx_anuncio`.
 - **Estacionada** pela regra 2 da janela (3 voltas sem aprovar). A v4 não passou pelo revisor.
+
+## 13. Parecer da 4ª volta (v4, liberada pelo operador às 19:30) — DEVOLVER → estacionada de vez
+
+B1 e B2 da volta 3 foram resolvidos no nível da regra. Sobram três consertos curtos, os três dentro deles:
+1. **§3.1 (linhas 113-117):** "ele(a) disse" e "chegou depois" leem com `.limit(1000)` sem janela de data
+   (`supabase/functions/fila/index.ts:363`). Se a leitura bater no teto, a conversa que ficou de fora sai como "não chegou
+   nada", e não como "não sei". Precisa ser "não sei", como o "hoje" (linha 101), com cenário e sabotagem.
+2. **§3.0.1:** o trecho de busca sai do chat-id inteiro, que inclui `@conference.olxbr` (`coletor-lib.mjs:159`,
+   `regras.ts:78`). Num corpo com todos os trechos menores que 10 letras, a busca vira `like '%conference%'` e casa com todas
+   as linhas da OLX. O trecho deve sair só do corpo, e o desempate precisa ser escrito (o primeiro de maior tamanho).
+3. **§3.1 (`conversa_do_rascunho`):** o teto de 40 linhas e o `cortada` têm de valer **depois** do corte exato pela
+   `chaveDaConversa`. Se não valerem, a busca larga que voltar cheia deve dar "não sei".
+Pela resposta do operador (19:30), DEVOLVER na 4ª volta = estacionar de vez e levar os bloqueios ao Ivan. Nenhum código escrito.
