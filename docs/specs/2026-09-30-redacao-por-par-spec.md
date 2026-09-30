@@ -1,4 +1,4 @@
-# Spec: Redação por par (v2, 30/09/2026)
+# Spec: Redação por par (v3, 30/09/2026)
 
 Escrita pela IA executora na janela de 24 h (fila, Item 6; ordem `radar-permutas/docs/relatorios/2026-09-29-ordem-de-trabalho-par-no-centro.md`, Parte 1, Item 2).
 Peça nova do site, por isso vai por spec, e não por ficha. Depende do `par_id` que o PR 1 da ficha
@@ -28,7 +28,7 @@ Pensador não viu, antes de aprovar.
 
 **Medição pendente (não feita nesta rodada):** a contagem em produção de (i) rascunhos pendentes sem `par_id` e (ii) destinos
 com 2 ou mais mensagens enviadas no mesmo dia nos últimos 14 dias. Só contagem (`count` com `exists`, nada de `group by` em
-texto). Ela vai na lista de decisões do Ivan (R4) e entra na v2 desta spec. O número de 29/09 (0 de 33 pendentes com `par_id`)
+texto). Ela vai na lista de decisões do Ivan (R4) e entra numa versão seguinte desta spec, se o Ivan autorizar. O número de 29/09 (0 de 33 pendentes com `par_id`)
 é do operador.
 
 ## 2. O que muda (visão do Ivan)
@@ -70,26 +70,46 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
 (`%3D`, `%2B`, `%2F`, `%40`) e cortado pela `chatIdBase`. **Não** se usa `chaveTelefone` (`regras.ts:109`): ela pega só os 8
 últimos dígitos, e dois números diferentes caem na mesma chave.
 - A edge ganha uma cópia em TypeScript (`chaveDaConversa` em `regras.ts`) e um **teste de contrato** que roda as mesmas
-  fixtures nas duas (a `.mjs` e a `.ts`), com o formato real dos destinos: WhatsApp com e sem 55, com `+` e espaços; chat-id
+  fixtures nas três (a `.mjs`, a `.ts` e a `conversa_chave` do SQL, no `tests/contrato-regua-bloqueio.test.sh` que já existe), com o formato real dos destinos: WhatsApp com e sem 55, com `+` e espaços; chat-id
   com `%3D` e sem.
-- **Busca larga no banco, corte exato no código:** o banco não tem índice pela chave. A edge busca largo (WhatsApp:
-  `destino like '%<dígitos sem 55>'`; OLX: `destino like '%<chatIdBase>%'`) e a função pura fica só com as linhas cuja
-  `chaveDaConversa` é **igual** à do rascunho. Um formato gravado diferente não vira 0 calado.
+- **Busca larga no banco, corte exato no código:** o banco não tem índice pela chave. A edge busca largo e a função pura fica
+  só com as linhas cuja `chaveDaConversa` é **igual** à do rascunho:
+  - **WhatsApp:** `destino like '%<dígitos sem 55>'` (o destino é gravado `55`+dígitos, `canalCanonico`, `regras.ts:86`);
+  - **OLX (chat):** o banco grava o chat-id como veio, com padding e às vezes codificado (`…==@conference.olxbr`,
+    `…%3D%3D%40conference.olxbr`; `retrato-lib.mjs:8-10`, `coletor-lib.mjs:159`). A busca é pelo **prefixo** do chat-id até o
+    1º caractere entre `= % @ + /`: `destino like '<prefixo>%'`. Prefixo com menos de 12 caracteres → a edge **recusa** a busca
+    (`conversa: não sei`), porque um prefixo curto traria conversas de outros;
+  - **OLX (anúncio, 1º contato):** o list-id é só dígitos: `destino = '<list-id>'`, sem busca larga;
+  - outro canal → `conversa: não sei` (nunca 0).
+  - Teste contra linhas **gravadas no formato real** (WhatsApp com e sem 55; chat-id com `==@`, com `%3D==@`, com `%3D%3D%40`
+    e com um `=` a menos), no Postgres local.
 
 ### 3.1 Backend (edge `fila`, repositório `radar-permutas`)
 
-- `COLUNAS_REDACAO` ganha `par_id`. **O `destino` sai do payload da Redação** (item D): cada rascunho leva `chave_hash` (md5
-  da chave, só para agrupar no site) e o rótulo mascarado. O telefone não chega ao navegador por esta tela.
-- `redacao_listar` passa a devolver, **além** de `grupos` (mantido por compatibilidade até o site novo ser publicado):
+- **Ação nova `redacao_por_par`** (v3). A `redacao_listar` fica **como está** até o site novo ser publicado (o site de hoje
+  depende dela, e ela já leva o `destino`: é o estado atual, não piora). A remoção da `redacao_listar` é a entrega 4 (§8).
+- Na ação nova, **nenhum `destino` sai da edge** (item D). Cada conversa leva `conversa_id` = o id (uuid) do rascunho
+  pendente mais antigo dela: é opaco e não dá para reverter (v3: o md5 sem sal da chave foi descartado, porque ~10^11 números
+  se recuperam em segundos). O rótulo é o `destino_rotulo`, mascarado pela edge; sem rótulo → "conversa sem nome (canal)",
+  **nunca** o destino (hoje `regras.ts:307` cai no destino).
+- `redacao_por_par` lê `mensagem_fila` pendente com `par_id` (`limit 500`, como hoje em `index.ts:352`; se voltar 500,
+  `cortada: true`, e a tela diz "há mais rascunhos do que a tela mostra") e devolve:
   - `checklist`: `par_checklist` (par_id, lado, etapa) dos `par_id` dos pendentes, uma leitura com `in (ids)`;
-  - `hoje`: por chave dos pendentes, as nossas mensagens `enviada` com `enviado_em` no dia de hoje em `America/Sao_Paulo`, e
-    as `aprovada`/`digitada`, com id, estado, hora e texto (mascarado). Uma leitura de todas as do dia com `limit 500`: se
+  - `hoje`: por conversa dos pendentes, as nossas mensagens `enviada` com `enviado_em` no dia de hoje em `America/Sao_Paulo`, e
+    as `aprovada`/`digitada`/`falhou` (a `falhou` pode sair de novo por `tentar_de_novo`, então conta, com o rótulo "falhou,
+    pode sair de novo"), com id, estado, hora e texto (mascarado). Uma leitura de todas as do dia com `limit 500`: se
     voltar 500 linhas, `hoje = null` ("não sei"), porque o corte esconderia envios;
   - `sem_par`: os alarmes abertos do diário (`setor='redacao'`, `tipo='alarme'`, `detalhe->>'motivo' = 'sem_par'`,
     `resolvido_em is null`; formato de `alarme()` em `agentes/diario-lib.mjs:24`, gravado em `pensador-lote.mjs:90`),
     **agrupados pela chave da conversa** (o alarme é o comum, não o `alarmeUnico`: cada rodada com mensagem nova do mesmo
-    destino grava outro). Cada grupo: `chave_hash`, os ids dos alarmes, a hora do mais novo, o rótulo mascarado e a fala da
-    `mensagem_recebida` da `prova_ref` mais nova (até 300 caracteres, mascarada).
+    destino grava outro). **A chave de cada alarme sai da `mensagem_recebida` da `prova_ref`** (canal e destino inteiros), nunca
+    do `detalhe` (só tem `{motivo}`, `diario-lib.mjs:27`) nem da coluna `diario.destino` (cortada em 60 caracteres,
+    `diario-lib.mjs:14`, e chat-ids chegam a 63). Alarme cuja `mensagem_recebida` não foi lida ou achada fica **sozinho**, com
+    "conversa: não sei", e nunca é juntado a outro. Leitura com `limit 200`; se voltar 200, "há mais alarmes do que a tela
+    mostra". Cada grupo: `conversa_id` (o id do alarme mais novo), os ids dos alarmes, a hora do mais novo, o rótulo mascarado
+    e a fala mais nova (até 300 caracteres, mascarada).
+  - "ele(a) disse" e "chegou depois" passam a ser calculados **pela chave** (hoje são pelo `destino` exato, `index.ts:355`,
+    `regras.ts:275-280`), porque a conversa agora é agrupada pela chave.
 - **Função pura nova** `montarRedacaoPorPar(pendentes, checklist, saidas, alarmes, falas, agora)` em `regras.ts`, testada em
   `tests/fila_regras.test.ts`. O `index.ts` só lê e chama.
 - **Três respostas (regra 3):** cada leitura que falha vira `null` naquele pedaço, e **não** lista vazia:
@@ -97,26 +117,35 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
   - `hoje` falhou ou bateu no `limit` → aviso **amarelo** "não sei se já saiu mensagem hoje", nunca silêncio;
   - `sem_par` falhou → o bloco diz "não consegui ler as conversas sem par";
   - a fala da `prova_ref` que falhou ou não foi achada → "fala: não consegui ler" / "fala: não achei" (duas coisas diferentes).
-- **Nova ação de leitura** `conversa_do_rascunho` `{fila_id}` (item D): a edge lê a linha da fila **pelo id** e tira dela o
+- **Nova ação de leitura** `conversa_do_rascunho` `{fila_id}` ou `{alarme_id}` (item D): a edge lê a linha da fila **pelo id** e tira dela o
   canal e o destino no servidor. O navegador nunca manda o destino. Devolve as últimas 40 falas dos dois lados, de 30 dias
   (`mensagem_recebida` de qualquer estado e `mensagem_fila` `enviada`), pela busca larga + corte exato do §3.0.1, em ordem de
   hora, e **`cortada: true|false`**: se havia mais de 40 ou mais antigas que 30 dias, a tela diz "mostrando as 40 últimas
-  de 30 dias" (item E). Para o bloco "Sem par", a mesma ação aceita `{alarme_id}` e tira o destino do `detalhe` do alarme.
+  de 30 dias" (item E). Com `{alarme_id}`, a edge lê o alarme, depois a `mensagem_recebida` da `prova_ref`, e tira dela o
+  canal e o destino; sem `prova_ref` legível → "não consegui ler a conversa".
   É chamada **só quando o Ivan expande**.
 - Nenhuma escrita nova no banco nesta fase. Nenhuma migração.
 
 ### 3.2 Site (`radar-site`)
 
-- **Cabeça do par** (item A): `js/api.js` ganha `fetchParesDaRedacao(parIds)`, que lê do banco do site `par` (id, apelido,
+- **Cabeça do par** (item A): um módulo puro novo, `js/redacao-leitura.js`, com `lerParesDaRedacao(cliente, parIds)`, que
+  **recebe o cliente** (como `js/registro.js`), testado em `tests/redacao-leitura.test.mjs` com um cliente falso que finge
+  `select`, `in` e erro. O `js/api.js` só passa o `sb` (ele importa de `esm.sh` e não roda em teste). A função que lê do banco do site `par` (id, apelido,
   `descartado_motivo`), `par_lado` (par_id, pessoa_id, imovel_id), `pessoa` (id, `nome_exibicao`, `proximo_passo`) e `imovel`
   (id, titulo, bairro, cidade, valor), com colunas **explícitas** (nunca `*`: nada de `telefone`, `contato_privado`,
   `link_thread_olx_privado`, `link_fonte_privado`, `telefone_anunciante`). Uma leitura por tabela, com `in (ids)`.
   - Leitura com erro → `null` → "par: não consegui ler";
   - leitura ok e o `par_id` não veio → "par: não achei (apagado?)", **diferente** de não ler;
   - par sem `par_lado` do VIP ou sem imóvel → "VIP: não achei" / "alvo: não achei".
-  - O E2E precisa do stub dessas tabelas (já existe para a Carteira, `tests/e2e/site-tabelas.sql`).
+  - O stub do E2E (`FIX` em `tests/e2e/site_e2e.py:19`) hoje não finge filtro nem erro (`site_e2e.py:48-54`). Ele passa a
+    respeitar `select` (colunas pedidas) e `in`, e a devolver erro quando a fixture pedir. Sem isso as sabotagens
+    `select('*')` e "não achei × não consegui ler" não ficariam vermelhas.
 - `js/redacao.js` ganha a função pura `redacaoPorPar(fila, cabecas, agora, tz, ordem)`, que devolve
-  `{ semPar: {grupos, rascunhos, erro}, pares: [ {par, cabeca, etapas, proximo, comissao, conversas: [ {chave_hash, rotulo, canal, hoje, rascunhos} ]} ] }`.
+  `{ semPar: {grupos, rascunhos, erro}, pares: [ {par, cabeca, etapas, proximo, comissao, conversas: [ {conversa_id, rotulo, canal, hoje, rascunhos} ]} ] }`.
+  - **Dois rótulos diferentes no bloco "Sem par"** (regra 3): "conversa sem par" (o Pensador procurou e não achou nenhum,
+    alarme `sem_par`) e "rascunho sem par gravado" (rascunho pendente sem `par_id`: pode ser conversa de **mais de um** par,
+    rascunho anterior ao PR 1 ou escrito pelo site; a tela não sabe qual e diz isso). "Nenhum" e "não sei" não viram a mesma
+    coisa.
   - **etapa** por ponta = a última etapa feita, na ordem `contactado → valor → fotos → aceite → visita_ok`;
   - **próximo passo** = a primeira etapa que falta em cada ponta, mais o `proximo_passo` do VIP, se houver;
   - **comissão em jogo** = 6% do valor do alvo; alvo sem valor → `null` ("valor não sei"), e vai para o fim na ordem R1 (a);
@@ -128,7 +157,7 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
 - `js/setores/redacao.js` renderiza o bloco "Sem par" e os pares. As ações de rascunho (`aprovar`, `aprovar_editado`,
   `rejeitar`) **não mudam** (mesma chamada, mesmo `data-fid`).
 - **Telefone (item D):** nenhum `data-*` leva destino (hoje `data-destino="${g.destino}"` em `js/setores/redacao.js:17` põe o
-  telefone cru no HTML; a nova tela usa só `data-fid`, `data-alarmes` (ids) e `data-chave` (md5)). Todo texto novo (falas,
+  telefone cru no HTML; a nova tela usa só `data-fid`, `data-alarmes` (ids) e `data-conversa` (uuid opaco)). Todo texto novo (falas,
   "já saiu hoje", o texto, o `destino` e o `pessoa_ref` do alarme `sem_par`, o rótulo) passa por `mascararTelefones`
   (`js/painel.js:55`) **também quando a edge já mascarou** (duas redes).
 - **"Ver a conversa inteira"**: botão por conversa. Chama `conversa_do_rascunho` e mostra as falas, com o lado ("ele(a)" /
@@ -140,10 +169,16 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
   sozinha (a mensagem nova entra com `pensado_em is null`, `lote-lib.mjs:278`) e gera outro alarme, se ainda não tiver par.
   Gravar o motivo é a decisão R3; até a resposta, segue a (b).
 - **"Ligar a um par"** (bloco "Sem par", item C): nesta fase **não grava nada**, e a tela **diz o beco inteiro**, sem prometer:
-  1. abre a Carteira (`#carteira`) para o Ivan pôr a chave da conversa na ficha do VIP ou do alvo;
-  2. avisa: "**a mensagem que já chegou não volta sozinha ao Pensador** (ela ficou marcada). Depois de ligar, escreva a
-     resposta aqui pelo 'Nova mensagem' (a ação `criar` que já existe) ou espere a pessoa escrever de novo";
-  3. o alarme continua aberto até o Ivan clicar "Resolvido" (a mesma `alarme_resolver`).
+  1. abre a Carteira (`#carteira`). O Ivan acha a pessoa pelo nome mascarado e pela fala (ele reconhece a conversa no
+     WhatsApp ou na OLX; o telefone não vem por esta tela) e põe o telefone ou o link da conversa na ficha do VIP ou do alvo;
+  2. avisa: "**a mensagem que já chegou não volta sozinha ao Pensador** (ela ficou marcada). Para responder agora, use a
+     ficha na Carteira → IA → '+ Fila' (`js/setores/carteira.js:122-141`, que já grava o `par_id`); ou espere a pessoa
+     escrever de novo";
+  3. avisa também: "**a ligação só vale quando o robô reler o site**, e ele relê no máximo a cada 24 h e só traz clientes em
+     5-NEGOCIACAO (o `retrato_site`). Cliente em outra etapa continua sem par";
+  4. o alarme continua aberto até o Ivan clicar "Resolvido" (a mesma `alarme_resolver`). O mesmo alarme aparece no Painel
+     (`index.ts:463`, `alarmesAbertos`): resolver num lugar resolve no outro, porque é a mesma linha.
+  (A v2 citava um "Nova mensagem" que não existe no site, e a ação `criar` pede o destino vindo do navegador.)
   Sem isso, o cliente ficaria sem resposta e sem aviso (achado do revisor: `pensador-lote.mjs:93` marca `pensado_em`, e
   `sqlNovasParaPensar` só pega `pensado_em is null`). Fazer a mensagem voltar ao Pensador sozinha é uma escrita nova: é a
   decisão R2 (b).
@@ -176,6 +211,8 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
 | Histórico do Pensador (`agentes/pensador-lote.mjs:65-67`) | por `destino` exato, `limit 3`, sem `aprovada`/`digitada` | **causa**: PR 1 (`conversa_fria`); esta spec é só a tela |
 | Migração de canal (`bloqueio_conversa.destinos_origem`, f464:43) | liga OLX e WhatsApp só no bloqueio | residual: o aviso é "neste canal" (§3.2), declarado na tela |
 | Alarme `sem_par` (`pensador-lote.mjs:90`) | `alarme()` comum: um por rodada com mensagem nova | a tela agrupa pela chave; trocar por `alarmeUnico` é observação ao #265 (R6) |
+| `conversa_recente` (`index.ts:478-497`; Recepção e Carteira) | busca pelos 8 últimos dígitos | residual: **ficha própria** (o mesmo defeito do item B, fora desta tela) |
+| Alarmes no Painel (`index.ts:463`) | o `sem_par` aparece lá também | declarado: mesma linha, resolver num lugar resolve no outro |
 | Rascunho escrito pelo site (`criar`, `fila_criar_pela_edge`) | `par_id` opcional | residual (ficha do PR 1, linha 141): aparece em "Sem par" até ganhar par |
 
 ## 6. Cenários (contra a matriz do portão e os casos de 29/09)
@@ -194,7 +231,7 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
 12. WhatsApp: dois números diferentes com os mesmos 8 últimos dígitos: são **duas** conversas (a chave inteira).
 13. OLX: o mesmo chat-id gravado com `%3D` e com `=`: a mesma conversa.
 14. `par_id` do rascunho não existe mais no site (leitura ok, sem linha): "par: não achei", diferente de "não consegui ler".
-15. "Ligar a um par": a tela diz que a mensagem já chegada não volta sozinha e aponta o "Nova mensagem".
+15. "Ligar a um par": a tela diz que a mensagem já chegada não volta sozinha e aponta a ficha na Carteira → IA → "+ Fila"; diz também o teto de 24 h e o 5-NEGOCIACAO.
 16. Conversa com 60 falas: aparecem 40, com o aviso do corte.
 17. "Já saiu hoje" bateu no `limit`: aviso amarelo "não sei", não "nenhuma".
 
@@ -215,7 +252,10 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
   `cortada` ignorado; falha de `sem_par` virar bloco vazio; `limit` de "hoje" batido tratado como completo; destino cru num
   `data-*`; `select('*')` na leitura do site; o "Ligar a um par" sem o aviso do beco; "Ignorar" resolvendo só o 1º id do grupo.
   Todas precisam deixar teste vermelho, mais um controle verde. A cópia TS da chave tem o teste de contrato do §3.0.1 contra
-  a `.mjs`, com fixtures no formato real (WhatsApp com e sem 55; chat-id com e sem `%3D`).
+  a `.mjs` e contra a `conversa_chave` do SQL, com fixtures no formato real (WhatsApp com e sem 55; chat-id com `==@`,
+  `%3D==@` e um `=` a menos). (v3) Mais sabotagens: busca OLX pelo chat-id inteiro (sem prefixo); chave do alarme tirada da
+  coluna `diario.destino`; md5 da chave como id; `grupos` da ação nova com `destino`; os dois rótulos do "Sem par" iguais;
+  `falhou` fora de "hoje"; o corte de 500 calado.
 - **Esteira:** `bash agentes/esteira.sh` no `radar-permutas` (edge) e o CI do `radar-site` (sintaxe, eslint, unit, E2E).
 
 ## 8. Entregas
@@ -225,6 +265,7 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
    com base no `fix/par-contexto-pr1` (depende do `par_id`).
 2. PR no `radar-site` (Redação por par), **rascunho**.
 3. Publicar a edge e o site: **decisão do Ivan**, depois de mesclar o #265 (e o #266).
+4. Depois do site novo publicado: um PR que tira a `redacao_listar` e o seu `destino` da edge.
 
 ## 9. Decisões do Ivan (vão para `docs/relatorios/2026-09-29-janela-24h-decisoes-para-o-ivan.md`)
 
@@ -232,7 +273,7 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
   (*recomendado*, é a sugestão da ordem); (b) pelo rascunho mais antigo (como hoje); (c) pela etapa mais avançada.
   Até a resposta, o código segue (a) com um único ponto de troca (`ordem`).
 - **R2. "Ligar a um par" grava a ligação e faz a mensagem voltar ao Pensador?** (a) Não nesta fase: o botão leva à Carteira,
-  e a tela avisa que a mensagem já chegada não volta sozinha (o Ivan escreve pelo "Nova mensagem" ou espera a pessoa)
+  e a tela avisa que a mensagem já chegada não volta sozinha (o Ivan responde pela ficha na Carteira → IA → "+ Fila" ou espera a pessoa)
   (*recomendado*, conservador: uma ligação errada é mensagem para a pessoa errada); (b) sim: tabela nova de ligação
   conversa → par, lida pelo `par-contexto`, e a mensagem marcada `sem_par` volta a `pensado_em is null` (migração e ficha
   própria).
@@ -257,3 +298,18 @@ banco (`agentes/sql/f464-regua-e-bloqueio.sql:96`). WhatsApp: os dígitos **inte
 - **E.** Regra 3: "não achei" × "não consegui ler" na cabeça e na fala; o corte de 40 falas e o `limit` de "hoje" aparecem.
 - **F.** §1 e §5: a causa é do PR 1 (`pensador-lote.mjs:65-67`, `conversa_fria`); a migração de canal é residual declarado.
 - **G.** 12 sabotagens a mais, o teste do fuso no site e os cenários 11 a 17.
+
+## 11. Mudanças da v3 (volta 2 do revisor: DEVOLVER, 30/09)
+
+1. **Busca da OLX:** pelo prefixo do chat-id até o 1º `= % @ + /`, com o mínimo de 12 caracteres; `olx_anuncio` pelo list-id
+   exato; teste contra linhas no formato real (§3.0.1).
+2. **Destino do alarme `sem_par`:** sai da `mensagem_recebida` da `prova_ref`, nunca do `detalhe` nem do `diario.destino`
+   cortado em 60; alarme sem conversa legível fica sozinho, com "não sei".
+3. **Telefone:** ação nova `redacao_por_par` sem destino; a `redacao_listar` fica como está até a entrega 4; `conversa_id` =
+   uuid opaco no lugar do md5 sem sal; o rótulo nunca cai no destino.
+4. **"Ligar a um par":** o caminho que existe (Carteira → IA → "+ Fila", com `par_id`); como o Ivan acha a pessoa sem o
+   telefone na tela; o teto de 24 h e o 5-NEGOCIACAO do `retrato_site` na tela; o alarme também no Painel.
+5. **Provas:** leitura do site em módulo puro com o cliente injetado; stub do E2E que finge filtro e erro; contrato da chave
+   também contra o SQL; a citação errada do `site-tabelas.sql` saiu.
+6. **§5 e rótulos:** `conversa_recente` (8 dígitos) e o alarme no Painel entram; "ele(a) disse"/"chegou depois" pela chave;
+   "conversa sem par" × "rascunho sem par gravado"; os cortes de 500 e de 200 aparecem na tela; `falhou` conta em "hoje".
